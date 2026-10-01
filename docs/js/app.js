@@ -364,7 +364,8 @@
       const valor = r.v == null ? (o.vacio || '—') : (o.fmt ? o.fmt(r.v) : num(r.v, 1) + ' %');
       return `<div class="${clase}"${pulsable} data-tip="${esc(t)}"><span class="hl">${esc(r.a)}</span>` +
         `<span class="hv">${esc(valor)}${d}</span>` +
-        `<span class="ht"><span class="hf" style="width:${Math.max(0, Math.min(100, (r.v || 0) / max * 100))}%;background:${r.color || o.color || COL[st.car]}"></span>` +
+        (r.v == null && o.vacio ? '<span class="ht"><span class="hf" style="width:4%;background:repeating-linear-gradient(45deg,#9aa7b3 0 3px,#d3dae0 3px 6px)"></span>'
+          : `<span class="ht"><span class="hf" style="width:${Math.max(0, Math.min(100, (r.v || 0) / max * 100))}%;background:${r.color || o.color || COL[st.car]}"></span>`) +
         (o.ref != null ? `<span class="hg" style="left:${o.ref / max * 100}%"></span>` : '') + '</span></div>';
     }).join('') + '</div>';
   }
@@ -645,7 +646,9 @@
       `</div><div class="grid2">` +
       panel('¿A quién llegan las becas?', 'beca_cob', hbars(gRows, { max: Math.max(25, ...gRows.map(r => r.v)), color: COL[c], tip: r => `Nivel ${GSE_NOM[r.gse].toLowerCase()}: ${num(r.v, 1)} % con beca\n${num(r.n)} matriculados en el grupo` }),
         bc ? `Porcentaje con beca dentro de cada nivel - ${esc(bc.l)} - pulsa un nivel para filtrar` : '') +
-      panel('Tipo de beca', 'beca_cob', hbars(tRows, { fmt: v => num(v) + ' est.', vacio: 'Menos de 5', color: '#4597bf', tip: r => r.v == null ? `${r.a}: menos de 5 estudiantes` : `${r.a}: ${num(r.v)} estudiantes` }), bc ? `Estudiantes beneficiarios - ${esc(bc.l)}` : '') +
+      panel('Tipo de beca', 'beca_cob', hbars(tRows, { fmt: v => num(v) + ' est.', vacio: '1 a 4 est.', color: '#4597bf', tip: r => r.v == null ? `${r.a}: entre 1 y 4 estudiantes (no se publica el número exacto)` : `${r.a}: ${num(r.v)} estudiantes` }) +
+        (tRows.some(r => r.v == null) ? `<p class="ph-note" style="margin:12px 0 0">${esc(tRows.filter(r => r.v == null).map(r => r.a).join(', '))}: entre 1 y 4 estudiantes. No se publica el número exacto para proteger su identidad.</p>` : ''),
+        bc ? `Estudiantes beneficiarios - ${esc(bc.l)}` : '') +
       `</div><div class="grid2">` +
       panel('Cobertura de tutorías por nivel', 'tut_cob', hbars(st.niv ? nRowsSel : nRows, { max: 100, color: COL[c], tip: r => `${r.a}: ${num(r.v, 1)} % asistió a tutorías\n${num(r.n)} matriculados en el nivel` }),
         tcur ? `${esc(tcur.l)} - pulsa un nivel para filtrar el tablero` : '') +
