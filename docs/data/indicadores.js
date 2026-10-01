@@ -100,8 +100,8 @@ window.FACS_INDICADORES = {
     responsable: "Facultad de Vinculación", meta: null, lineaBase: null, tolerancia: 10, umbral: 0.05
   },
   vin_avance: {
-    vista: "vinculacion", dimension: "Vinculación", nombre: "Cumplimiento de resultados previstos", tipo: "Resultado",
-    definicion: "Avance promedio que reportan, en sus informes aprobados, los proyectos ya finalizados o cerrados respecto de lo que planificaron.",
+    vista: "vinculacion", dimension: "Vinculación", nombre: "Avance reportado por los proyectos", tipo: "Seguimiento",
+    definicion: "Avance promedio que reportan, en sus informes aprobados, los proyectos ya finalizados o cerrados respecto de lo que cada proyecto planificó. No mide el cumplimiento de objetivos de la carrera, que todavía no están definidos.",
     formula: "Promedio del avance acumulado reportado por proyecto (tope 100 %)",
     unidad: "%", sentido: "mayor", frecuencia: "Anual", fuente: "SGA · Informes de vinculación",
     responsable: "Facultad de Vinculación", meta: null, lineaBase: null, tolerancia: 5, umbral: 1

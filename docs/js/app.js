@@ -573,7 +573,7 @@
     const out = [], c = st.car;
     const p = medir('vin_proy', c).cur, b = medir('vin_benef', c).cur, a = medir('vin_avance', c).cur, u = medir('vin_culm', c).cur;
     if (p) out.push(`En ${esc(p.l.replace(' (parcial)', ''))}${p.parcial ? ', con el año todavía en curso,' : ''} iniciaron ${B(num(p.v) + ' proyectos')} de vinculación` + (b ? `, que se propusieron atender a ${B(num(b.v) + ' personas')} de forma directa.` : '.'));
-    if (a) out.push(`Los proyectos que terminaron reportan, en promedio, ${B(fmt('vin_avance', a.v))} de cumplimiento de lo planificado (${esc(baseTxt('vin_avance', a))}, iniciados en ${esc(a.l)}).`);
+    if (a) out.push(`Los proyectos que terminaron reportan, en promedio, ${B(fmt('vin_avance', a.v))} de avance sobre lo que planificaron (${esc(baseTxt('vin_avance', a))}, iniciados en ${esc(a.l)}).`);
     if (u) out.push(`${B(fmt('vin_culm', u.v))} de los estudiantes que cerraron su participación la culminó.`);
     return out;
   }
@@ -584,7 +584,7 @@
     const xsB = serie('vin_benef', c).filter(p => p.a <= st.anio && p.a >= 2021).map(p => ({ p: p.p, l: p.l, a: p.a, segs: [{ k: 'Beneficiarios previstos', v: p.v, color: COL[c] }] }));
     const filas = (D.det.vin_proyectos[c] || []).filter(f => f.a <= st.anio && (vinTodos || f.a === st.anio));
     const carN = { ENF: 'Enfermería', NUT: 'Nutrición', 'ENF+NUT': 'Ambas' };
-    const tablaP = filas.length ? `<div class="tbl-wrap" style="max-height:420px;overflow-y:auto"><table class="res"><thead><tr><th>Proyecto</th>${c === 'FACS' ? '<th>Carrera</th>' : ''}<th class="n">Inicio</th><th>Estado</th><th>Cumplimiento reportado</th><th class="n">Beneficiarios previstos</th><th class="n">Estudiantes</th></tr></thead><tbody>` +
+    const tablaP = filas.length ? `<div class="tbl-wrap" style="max-height:420px;overflow-y:auto"><table class="res"><thead><tr><th>Proyecto</th>${c === 'FACS' ? '<th>Carrera</th>' : ''}<th class="n">Inicio</th><th>Estado</th><th>Avance reportado</th><th class="n">Beneficiarios previstos</th><th class="n">Estudiantes</th></tr></thead><tbody>` +
       filas.map(f => `<tr class="${f.a === st.anio ? 'hl' : ''}"><td style="min-width:260px">${esc(f.nom)}</td>${c === 'FACS' ? `<td class="per">${esc(carN[f.car])}</td>` : ''}<td class="n">${f.a}</td>` +
         `<td><span class="pill ${/ejecuci/i.test(f.estado) ? 'ej' : 'fin'}">${/ejecuci/i.test(f.estado) ? 'En ejecución' : esc(f.estado)}</span></td>` +
         `<td>${f.av == null ? '<span class="per">Sin informe aprobado</span>' : `<span class="mini-bar"><i style="width:${f.av}%"></i></span>${num(f.av, 0)} %`}</td>` +
@@ -596,7 +596,7 @@
       panel('Proyectos ejecutados por año de inicio', 'vin_proy', slot(el => columnChart(el, { xs: xsP, h: 205 }))) +
       panel('Beneficiarios directos previstos', 'vin_benef', slot(el => columnChart(el, { xs: xsB, h: 205 }))) +
       `</div><div class="panel"><div class="ph"><h3>Proyectos de vinculación</h3><span style="flex:1"></span>${seg}</div>` +
-      `<p class="ph-note">${num(filas.length)} proyectos aprobados. El cumplimiento es el avance que el propio proyecto reporta en sus informes aprobados.</p>${tablaP}</div>` +
+      `<p class="ph-note">${num(filas.length)} proyectos aprobados. El avance es el que el propio proyecto reporta en sus informes aprobados, frente a lo que planificó.</p>${tablaP}</div>` +
       tabla(ids.concat('vin_est'));
   }
 
