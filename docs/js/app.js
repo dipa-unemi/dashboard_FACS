@@ -1,5 +1,5 @@
 /*
- * Dashboard de Desempeño de la Carrera · FACS · UNEMI
+ * Dashboard de Desempeño de la Carrera - FACS - UNEMI
  * Lee window.FACS_DATA (agregado por scripts/agregar_facs.py) y
  * window.FACS_INDICADORES (catálogo y metas). No hay microdatos en el navegador.
  *
@@ -135,9 +135,9 @@
     if (!p) return '';
     const n = p.n, k = p.num;
     switch (id) {
-      case 'sat_est': case 'sat_serv': return `${num(n)} estudiantes encuestados` + (p.cob != null ? ` · ${num(p.cob, 0)} % de la matrícula` : '');
-      case 'sat_doc': return `${num(n)} docentes encuestados` + (p.cob != null ? ` · ${num(p.cob, 0)} % de la planta` : '');
-      case 'sat_grad': return `${num(n)} graduado${n === 1 ? '' : 's'} consultado${n === 1 ? '' : 's'}` + (n < 10 ? ' · base pequeña' : '');
+      case 'sat_est': case 'sat_serv': return `${num(n)} estudiantes encuestados` + (p.cob != null ? ` - ${num(p.cob, 0)} % de la matrícula` : '');
+      case 'sat_doc': return `${num(n)} docentes encuestados` + (p.cob != null ? ` - ${num(p.cob, 0)} % de la planta` : '');
+      case 'sat_grad': return `${num(n)} graduado${n === 1 ? '' : 's'} consultado${n === 1 ? '' : 's'}` + (n < 10 ? ' - base pequeña' : '');
       case 'doc_prod': return `${num(k)} de ${num(n)} docentes`;
       case 'pub_alto': case 'pub_est': return `${num(k)} de ${num(n)} artículos`;
       case 'tut_cob': case 'beca_cob': return `${num(k)} de ${num(n)} matriculados`;
@@ -384,14 +384,14 @@
     const c = CAT[id], m = medir(id, st.car), cur = m.cur;
     const tag = o.link ? 'button type="button"' : 'div';
     const attrs = o.link ? ` data-go="${c.vista}" data-foco="${id}"` : '';
-    const lbl = `<div class="top"><span class="lbl">${c.tipo ? `<span style="color:var(--acento)">${esc(c.tipo)} · </span>` : ''}${esc(c.nombre)}</span>${info(id)}</div>`;
+    const lbl = `<div class="top"><span class="lbl">${c.tipo ? `<span style="color:var(--acento)">${esc(c.tipo)} - </span>` : ''}${esc(c.nombre)}</span>${info(id)}</div>`;
     const sinGse = dimAct() && !GSE_IND.has(id);
     const cls = 'kpi' + (sinGse ? ' nogse' : '');
     if (!cur) return `<${tag} class="${cls} na" id="k-${id}"${attrs}>${lbl}<div class="val">Sin medición</div><div class="per">No hay resultados ${esc(etiquetaCorte())}</div></${tag.split(' ')[0]}>`;
     const t = tendencia(id, cur, m.prev), e = estado(id, st.car, cur.v);
     const base = sinGse ? `Sin desglose por ${st.gse ? 'nivel socioeconómico' : 'nivel de la carrera'}: muestra a toda la población` : baseTxt(id, cur);
     return `<${tag} class="${cls}" id="k-${id}"${attrs}>${lbl}` +
-      `<div class="mid"><div><div class="val">${valHTML(id, cur.v)}</div><div class="per">${esc(cur.l)}${m.prev ? ' · antes ' + esc(fmt(id, m.prev.v)) : ''}</div></div>${spark(id)}</div>` +
+      `<div class="mid"><div><div class="val">${valHTML(id, cur.v)}</div><div class="per">${esc(cur.l)}${m.prev ? ' - antes ' + esc(fmt(id, m.prev.v)) : ''}</div></div>${spark(id)}</div>` +
       `<div class="base">${esc(base)}</div>` +
       `<div class="foot">${hayMeta(id) ? `<span class="meta">Meta: <b>${esc(metaTxt(id, st.car))}</b></span>` : `<span class="meta">vs. anterior</span>`}${t.html}${hayMeta(id) ? e.html : ''}</div></${tag.split(' ')[0]}>`;
   }
@@ -486,17 +486,17 @@
     let det = '';
     if (grupoDet === 'est') {
       const d = ultimoDet(detDe('sat_est', c)), cur = medir('sat_est', c).cur;
-      det = d ? `<p class="ph-note">${esc(lblDe(d.k))}${d.prevK ? ' · la flecha compara con ' + esc(lblDe(d.prevK)) : ''}. La línea vertical marca el resultado global.</p>` +
-        hbars(d.rows, { max: 100, prev: d.prev && mapa(d.prev), ref: cur && cur.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 · promedio ${num(r.media, 2)} de 5\n${num(r.n)} respuestas` }) : '<div class="empty"><b>Sin detalle por aspecto hasta ' + st.anio + '</b>La primera medición por aspecto es de agosto – diciembre 2025.</div>';
+      det = d ? `<p class="ph-note">${esc(lblDe(d.k))}${d.prevK ? ' - la flecha compara con ' + esc(lblDe(d.prevK)) : ''}. La línea vertical marca el resultado global.</p>` +
+        hbars(d.rows, { max: 100, prev: d.prev && mapa(d.prev), ref: cur && cur.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 - promedio ${num(r.media, 2)} de 5\n${num(r.n)} respuestas` }) : '<div class="empty"><b>Sin detalle por aspecto hasta ' + st.anio + '</b>La primera medición por aspecto es de agosto – diciembre 2025.</div>';
     } else if (grupoDet === 'grad') {
       const d = ultimoDet(D.det.sat_grad[c]);
-      det = d ? `<p class="ph-note">Graduados consultados en ${esc(d.k)} · ${num(d.rows[0].n)} respuestas${d.rows[0].n < 10 ? ' (base pequeña)' : ''}. Escala de 1 a 7: se cuenta como satisfecho de 5 a 7.</p>` +
-        '<div class="hsub">La formación</div>' + hbars(d.rows.filter(r => r.g === 'formacion'), { max: 100, tip: r => `${r.a}\n${num(r.v, 1)} % satisfechos · promedio ${num(r.media, 2)} de 7` }) +
-        '<div class="hsub">El personal y los recursos de la universidad</div>' + hbars(d.rows.filter(r => r.g === 'recursos'), { max: 100, tip: r => `${r.a}\n${num(r.v, 1)} % satisfechos · promedio ${num(r.media, 2)} de 7` }) : '<div class="empty"><b>Sin encuestas a graduados hasta ' + st.anio + '</b></div>';
+      det = d ? `<p class="ph-note">Graduados consultados en ${esc(d.k)} - ${num(d.rows[0].n)} respuestas${d.rows[0].n < 10 ? ' (base pequeña)' : ''}. Escala de 1 a 7: se cuenta como satisfecho de 5 a 7.</p>` +
+        '<div class="hsub">La formación</div>' + hbars(d.rows.filter(r => r.g === 'formacion'), { max: 100, tip: r => `${r.a}\n${num(r.v, 1)} % satisfechos - promedio ${num(r.media, 2)} de 7` }) +
+        '<div class="hsub">El personal y los recursos de la universidad</div>' + hbars(d.rows.filter(r => r.g === 'recursos'), { max: 100, tip: r => `${r.a}\n${num(r.v, 1)} % satisfechos - promedio ${num(r.media, 2)} de 7` }) : '<div class="empty"><b>Sin encuestas a graduados hasta ' + st.anio + '</b></div>';
     } else {
       const d = ultimoDet(D.det.sat_doc[c]), cur = medir('sat_doc', c).cur;
-      det = d ? `<p class="ph-note">${esc(lblDe(d.k))} · ${num(cur.n)} docentes. La línea vertical marca el resultado global.</p>` +
-        hbars(d.rows, { max: 100, ref: cur && cur.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 · promedio ${num(r.media, 2)} de 5` }) : '<div class="empty"><b>Sin encuesta docente hasta ' + st.anio + '</b>La primera medición es de abril – julio 2026.</div>';
+      det = d ? `<p class="ph-note">${esc(lblDe(d.k))} - ${num(cur.n)} docentes. La línea vertical marca el resultado global.</p>` +
+        hbars(d.rows, { max: 100, ref: cur && cur.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 - promedio ${num(r.media, 2)} de 5` }) : '<div class="empty"><b>Sin encuesta docente hasta ' + st.anio + '</b>La primera medición es de abril – julio 2026.</div>';
     }
     const seg = [['est', 'Estudiantes'], ['grad', 'Graduados'], ['doc', 'Docentes']].map(([k, l]) => `<button type="button" class="segbtn ${grupoDet === k ? 'on' : ''}" data-grupo="${k}">${l}</button>`).join('');
     const notaEst = serie('sat_est', c).some(p => p.glob && p.a <= st.anio) ? 'El primer punto (abril – julio 2025) es una medición general, sin detalle por aspecto.' : '';
@@ -514,7 +514,7 @@
     const rows = d ? GSE_ORD.filter(g => d[g]).map(g => ({ a: GSE_NOM[g], gse: g, v: d[g].v, n: d[g].n })) : [];
     return panel('Satisfacción estudiantil por nivel socioeconómico', 'sat_est',
       hbars(rows, { max: 100, color: COL[st.car], tip: r => `Nivel ${GSE_NOM[r.gse].toLowerCase()}: ${num(r.v, 1)} % de valoraciones de 4 o 5\n${num(r.n)} estudiantes encuestados` }),
-      cur ? `${esc(cur.l)} · pulsa un nivel para filtrar el tablero` : '');
+      cur ? `${esc(cur.l)} - pulsa un nivel para filtrar el tablero` : '');
   }
 
   /* ---------------- Vista 6 ---------------- */
@@ -547,7 +547,7 @@
     const cuSel = cuTodos ? cuKs : cuKs.slice(-1), cuUlt = cuKs[cuKs.length - 1];
     const sumaAnios = id => serie(id, c).filter(p => cuSel.includes(p.p)).reduce((s, p) => s + (p.v || 0), 0);
     const cuQ = q => cuSel.reduce((s, k) => s + (D.det.pub_cuartil[c][k][q] || 0), 0);
-    const cuRows = cuSel.length ? ['Q1', 'Q2', 'Q3', 'Q4'].map((k, i) => ({ a: k + (i === 0 ? ' · mayor impacto' : i === 3 ? ' · menor impacto' : ''), v: cuQ(k), color: ['#1c3247', '#335f7f', '#3c7aa0', '#4597bf'][i] })) : [];
+    const cuRows = cuSel.length ? ['Q1', 'Q2', 'Q3', 'Q4'].map((k, i) => ({ a: k + (i === 0 ? ' - mayor impacto' : i === 3 ? ' - menor impacto' : ''), v: cuQ(k), color: ['#1c3247', '#335f7f', '#3c7aa0', '#4597bf'][i] })) : [];
     const cuTot = cuRows.reduce((s, r) => s + r.v, 0), artTot = sumaAnios('pub_total'), proyTot = sumaAnios('pub_proy');
     const enCurso = cuUlt == D.anioActual ? (cuSel.length > 1 ? ` (${cuUlt} en curso)` : ' (en curso)') : '';
     const cuRango = cuSel.length > 1 ? `${cuSel[0]} – ${cuUlt}` : cuUlt;
@@ -560,7 +560,7 @@
       panel('Revistas de impacto mundial', 'pub_alto', slot(el => lineChart(el, 'pub_alto', { h: 200 })), 'Porcentaje de artículos en Scopus o Web of Science') +
       panel('Coautoría con estudiantes', 'pub_est', slot(el => lineChart(el, 'pub_est', { h: 200 })), 'Porcentaje de artículos con al menos un estudiante coautor') +
       (cuSel.length ? `<div class="panel"><div class="ph"><h3>Cuartil de las revistas indexadas</h3>${info('pub_q12')}<span style="flex:1"></span>${cuSeg}</div>` +
-        `<p class="ph-note">Solo los artículos con cuartil asignado · ${cuSel.length > 1 ? 'años' : 'año'} ${esc(cuRango)}${enCurso}</p>` +
+        `<p class="ph-note">Solo los artículos con cuartil asignado - ${cuSel.length > 1 ? 'años' : 'año'} ${esc(cuRango)}${enCurso}</p>` +
         hbars(cuRows, { fmt: v => num(v) + ' art.', tip: r => `${r.a}: ${num(r.v)} artículos en ${cuRango}` }) +
         `<p class="ph-note" style="margin:12px 0 0">${B(num(artTot))} artículos publicados${cuSel.length > 1 ? ` entre ${cuSel[0]} y ${cuUlt}` : ` en ${cuUlt}`}; ${B(num(cuTot))} en revistas con cuartil.` +
         `${proyTot ? ` ${num(proyTot)} provienen de proyectos de investigación.` : ''}</p></div>`
@@ -644,13 +644,13 @@
       panel('Estudiantes con beca o ayuda', 'beca_cob', slot(el => lineChart(el, 'beca_cob'))) +
       `</div><div class="grid2">` +
       panel('¿A quién llegan las becas?', 'beca_cob', hbars(gRows, { max: Math.max(25, ...gRows.map(r => r.v)), color: COL[c], tip: r => `Nivel ${GSE_NOM[r.gse].toLowerCase()}: ${num(r.v, 1)} % con beca\n${num(r.n)} matriculados en el grupo` }),
-        bc ? `Porcentaje con beca dentro de cada nivel · ${esc(bc.l)} · pulsa un nivel para filtrar` : '') +
-      panel('Tipo de beca', 'beca_cob', hbars(tRows, { fmt: v => num(v) + ' est.', vacio: 'Menos de 5', color: '#4597bf', tip: r => r.v == null ? `${r.a}: menos de 5 estudiantes` : `${r.a}: ${num(r.v)} estudiantes` }), bc ? `Estudiantes beneficiarios · ${esc(bc.l)}` : '') +
+        bc ? `Porcentaje con beca dentro de cada nivel - ${esc(bc.l)} - pulsa un nivel para filtrar` : '') +
+      panel('Tipo de beca', 'beca_cob', hbars(tRows, { fmt: v => num(v) + ' est.', vacio: 'Menos de 5', color: '#4597bf', tip: r => r.v == null ? `${r.a}: menos de 5 estudiantes` : `${r.a}: ${num(r.v)} estudiantes` }), bc ? `Estudiantes beneficiarios - ${esc(bc.l)}` : '') +
       `</div><div class="grid2">` +
       panel('Cobertura de tutorías por nivel', 'tut_cob', hbars(st.niv ? nRowsSel : nRows, { max: 100, color: COL[c], tip: r => `${r.a}: ${num(r.v, 1)} % asistió a tutorías\n${num(r.n)} matriculados en el nivel` }),
-        tcur ? `${esc(tcur.l)} · pulsa un nivel para filtrar el tablero` : '') +
-      panel('Satisfacción con cada servicio', 'sat_serv', ss ? hbars(ss.rows, { max: 100, prev: ss.prev && mapa(ss.prev), ref: sc && sc.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 · promedio ${num(r.media, 2)} de 5` }) : '',
-        ss ? `${esc(lblDe(ss.k))}${ss.prevK ? ' · la flecha compara con ' + esc(lblDe(ss.prevK)) : ''}` : `Sin medición hasta ${st.anio}`) +
+        tcur ? `${esc(tcur.l)} - pulsa un nivel para filtrar el tablero` : '') +
+      panel('Satisfacción con cada servicio', 'sat_serv', ss ? hbars(ss.rows, { max: 100, prev: ss.prev && mapa(ss.prev), ref: sc && sc.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 - promedio ${num(r.media, 2)} de 5` }) : '',
+        ss ? `${esc(lblDe(ss.k))}${ss.prevK ? ' - la flecha compara con ' + esc(lblDe(ss.prevK)) : ''}` : `Sin medición hasta ${st.anio}`) +
       `</div>` + tabla(ids);
   }
 
@@ -670,7 +670,7 @@
     if (st.sem) chips.push(`<button type="button" class="chip" data-quitar="sem">Periodo: ${esc(lblDe(st.sem))}<span class="x" aria-label="Quitar">×</span></button>`);
     if (st.gse) chips.push(`<button type="button" class="chip" data-quitar="gse">Nivel socioeconómico: ${esc(GSE_NOM[st.gse])}<span class="x" aria-label="Quitar">×</span></button>`);
     if (st.niv) chips.push(`<button type="button" class="chip" data-quitar="niv">${esc(nivNom(st.niv))}<span class="x" aria-label="Quitar">×</span></button>`);
-    const head = `<div class="vhead"><div class="ic"><svg viewBox="0 0 24 24">${IC[v.id]}</svg></div><div><h2>${v.num ? v.num + '. ' : ''}${esc(v.nom)}</h2><p>${esc(v.obj)} · ${esc(NOM[st.car])}, ${esc(etiquetaCorte())}</p></div>` +
+    const head = `<div class="vhead"><div class="ic"><svg viewBox="0 0 24 24">${IC[v.id]}</svg></div><div><h2>${v.num ? v.num + '. ' : ''}${esc(v.nom)}</h2><p>${esc(v.obj)} - ${esc(NOM[st.car])}, ${esc(etiquetaCorte())}</p></div>` +
       `<div class="chips">${chips.join('')}${chips.length ? '<button type="button" class="chip-limpiar" data-quitar="todo">Quitar filtros</button>' : '<span class="chip-ayuda">Pulsa un punto, una barra o una carrera en los gráficos para filtrar todo el tablero</span>'}</div></div>`;
     pend = [];
     root.innerHTML = head + RENDER[st.vista]();
