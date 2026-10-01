@@ -3,7 +3,8 @@
 Tablero de seguimiento ACBSP de la Facultad de Ciencias de la Salud
 (Enfermería y Nutrición y Dietética).
 
-**Tablero publicado:** https://dipa-unemi.github.io/dashboard_FACS/
+**Tablero publicado:** https://dipa-unemi.github.io/dashboard_FACS/docs/index.html
+(también abre desde https://dipa-unemi.github.io/dashboard_FACS/)
 
 ## Vistas
 
