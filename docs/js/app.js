@@ -50,6 +50,8 @@
   const GSE_DET = new Set(['sat_est', 'sat_serv', 'beca_tipo']);
   const GSE_NOM = { 'BAJO': 'Bajo', 'MEDIO BAJO': 'Medio bajo', 'MEDIO TÍPICO': 'Medio típico', 'MEDIO ALTO': 'Medio alto', 'ALTO': 'Alto' };
   const GSE_ORD = Object.keys(GSE_NOM);
+  // El nivel alto se publica aunque tenga pocos estudiantes: la etiqueta dice cuántos son.
+  const gseLbl = (g, n) => GSE_NOM[g] + (n < 10 ? ` · ${n === 1 ? '1 estudiante' : n + ' estudiantes'}` : '');
   /* Nivel de la carrera: misma lógica que el nivel socioeconómico. Se usa uno a la vez. */
   const NIV_ORD = [...new Set(Object.keys(D.ind.tut_cob).filter(k => /\|N\d$/.test(k)).map(k => k.split('|')[1]))].sort();
   const ORDINAL = { 1: '1.er', 2: '2.º', 3: '3.er', 4: '4.º', 5: '5.º', 6: '6.º', 7: '7.º', 8: '8.º', 9: '9.º' };
@@ -417,6 +419,10 @@
 
   function lectura(items, titulo) {
     items = items.filter(Boolean);
+    // Grupo socioeconómico pequeño (el nivel alto): advertir antes de cualquier conclusión.
+    const base = st.gse && medir('tut_cob', st.car).cur;
+    if (items.length && base && base.n < 10) items.unshift(`Atención: en ${esc(base.l)} hay solo ${B(base.n === 1 ? '1 estudiante' : base.n + ' estudiantes')}${deGrupo()}` +
+      `${base.n > 1 ? `; cada uno mueve los porcentajes en ${num(100 / base.n)} puntos` : ''}. Estas cifras describen casos individuales, no tendencias.`);
     if (!items.length) return '';
     return `<div class="lectura"><h3><svg viewBox="0 0 24 24">${IC.idea}</svg>${esc(titulo || 'Lo que dicen los datos')}</h3><ul>${items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
   }
@@ -507,9 +513,9 @@
 
   function panelGse() {
     const cur = medir('sat_est', st.car).cur, d = cur && (D.det.sat_gse[st.car] || {})[cur.p];
-    const rows = d ? GSE_ORD.filter(g => d[g]).map(g => ({ a: GSE_NOM[g], gse: g, v: d[g].v, n: d[g].n })) : [];
+    const rows = d ? GSE_ORD.filter(g => d[g]).map(g => ({ a: gseLbl(g, d[g].n), gse: g, v: d[g].v, n: d[g].n })) : [];
     return panel('Satisfacción estudiantil por nivel socioeconómico', 'sat_est',
-      hbars(rows, { max: 100, color: COL[st.car], tip: r => `Nivel ${r.a.toLowerCase()}: ${num(r.v, 1)} % de valoraciones de 4 o 5\n${num(r.n)} estudiantes encuestados` }),
+      hbars(rows, { max: 100, color: COL[st.car], tip: r => `Nivel ${GSE_NOM[r.gse].toLowerCase()}: ${num(r.v, 1)} % de valoraciones de 4 o 5\n${num(r.n)} estudiantes encuestados` }),
       cur ? `${esc(cur.l)} · pulsa un nivel para filtrar el tablero` : '');
   }
 
@@ -609,7 +615,7 @@
       (tc.prev ? ` (${fmt('tut_cob', tc.prev.v)} el semestre anterior).` : '.'));
     if (c === 'FACS') {
       const e = medir('tut_cob', 'ENF').cur, n = medir('tut_cob', 'NUT').cur;
-      if (e && n && Math.abs(e.v - n.v) >= 10) out.push(`La cobertura de tutorías es desigual entre carreras: ${B('Enfermería ' + fmt('tut_cob', e.v))} frente a ${B('Nutrición ' + fmt('tut_cob', n.v))}.`);
+      if (e && n && e.n >= 10 && n.n >= 10 && Math.abs(e.v - n.v) >= 10) out.push(`La cobertura de tutorías es desigual entre carreras: ${B('Enfermería ' + fmt('tut_cob', e.v))} frente a ${B('Nutrición ' + fmt('tut_cob', n.v))}.`);
     }
     const te = medir('tut_ejec', c);
     if (te.cur && te.pts.length > 2) {
@@ -625,7 +631,7 @@
     const bc = medir('beca_cob', c).cur;
     const g = bc ? ultimoDet(D.det.beca_gse[c], k => k === bc.p) : null;
     const ORD = ['BAJO', 'MEDIO BAJO', 'MEDIO TÍPICO', 'MEDIO ALTO', 'ALTO'];
-    const gRows = g ? ORD.filter(k => g.rows[k]).map(k => ({ a: GSE_NOM[k], gse: k, v: g.rows[k].v, n: g.rows[k].n })) : [];
+    const gRows = g ? ORD.filter(k => g.rows[k]).map(k => ({ a: gseLbl(k, g.rows[k].n), gse: k, v: g.rows[k].v, n: g.rows[k].n })) : [];
     const tp = bc ? (detDe('beca_tipo', c) || {})[bc.p] : null;
     const tRows = tp ? Object.entries(tp).map(([k, v]) => ({ a: k[0] + k.slice(1).toLowerCase().replace(/\s*\(desde 2do nivel\)/, ' (desde 2.º nivel)'), v })).sort((a, b) => (b.v || 0) - (a.v || 0)) : [];
     const ss = ultimoDet(detDe('sat_serv', c)), sc = medir('sat_serv', c).cur;
@@ -639,7 +645,7 @@
       panel('Cobertura de tutorías académicas', 'tut_cob', slot(el => lineChart(el, 'tut_cob'))) +
       panel('Estudiantes con beca o ayuda', 'beca_cob', slot(el => lineChart(el, 'beca_cob'))) +
       `</div><div class="grid2">` +
-      panel('¿A quién llegan las becas?', 'beca_cob', hbars(gRows, { max: Math.max(25, ...gRows.map(r => r.v)), color: COL[c], tip: r => `Nivel ${r.a.toLowerCase()}: ${num(r.v, 1)} % con beca\n${num(r.n)} matriculados en el grupo` }),
+      panel('¿A quién llegan las becas?', 'beca_cob', hbars(gRows, { max: Math.max(25, ...gRows.map(r => r.v)), color: COL[c], tip: r => `Nivel ${GSE_NOM[r.gse].toLowerCase()}: ${num(r.v, 1)} % con beca\n${num(r.n)} matriculados en el grupo` }),
         bc ? `Porcentaje con beca dentro de cada nivel · ${esc(bc.l)} · pulsa un nivel para filtrar` : '') +
       panel('Tipo de beca', 'beca_cob', hbars(tRows, { fmt: v => num(v) + ' est.', vacio: 'Menos de 5', color: '#4597bf', tip: r => r.v == null ? `${r.a}: menos de 5 estudiantes` : `${r.a}: ${num(r.v)} estudiantes` }), bc ? `Estudiantes beneficiarios · ${esc(bc.l)}` : '') +
       `</div><div class="grid2">` +

@@ -414,6 +414,10 @@ beca["carrera"] = beca.carrera_estudiante
 beca["cod"] = beca.periodo.map(COD_DE)
 
 
+MIN_CELDA = 10            # tamaño mínimo de un grupo para publicar su cifra (ver filtro cruzado)
+SIN_UMBRAL = {"ALTO"}    # niveles socioeconómicos que se publican aunque sean pequeños
+
+
 def bloque_apoyo(tut, beca):
     """Tutorías y becas por carrera y periodo, contra la MATRICULA vigente."""
     res = {c: {} for c in ["tut_cob", "tut_int", "tut_ejec", "beca_cob"]}
@@ -449,7 +453,7 @@ def bloque_apoyo_carrera(tut, beca, k):
              .drop_duplicates("inscripcion_id")[["inscripcion_id", "grupo_socioeconomico"]])
         m["beca"] = m.inscripcion_id.isin(set(y.inscripcion_id))
         gse[c] = {g: {"v": pct(h.beca.sum(), len(h)), "n": int(len(h))}
-                  for g, h in m.groupby("grupo_socioeconomico") if len(h) >= 10}
+                  for g, h in m.groupby("grupo_socioeconomico") if len(h) >= MIN_CELDA or g in SIN_UMBRAL}
     return sc, si, se, sb, tipo, gse
 
 
@@ -463,8 +467,9 @@ detalle.update(_d)
 # pueda filtrarse al pulsar ese nivel. Se publican con la clave "CARRERA|NIVEL".
 # Una celda con menos de 10 personas no se publica: el porcentaje de un grupo
 # tan chico no es estable y acercaría el dato a personas identificables.
+# Excepción pedida por la carrera (1-10-2026): el nivel socioeconómico ALTO se
+# publica siempre, aunque tenga pocos estudiantes (en 2026, entre 1 y 5).
 GSE = ["BAJO", "MEDIO BAJO", "MEDIO TÍPICO", "MEDIO ALTO", "ALTO"]
-MIN_CELDA = 10
 gse_de = (matr.drop_duplicates(["cod", "inscripcion_id"])
           .set_index(["cod", "inscripcion_id"]).grupo_socioeconomico.to_dict())
 
@@ -506,14 +511,14 @@ def desglosar(mapa, valores):
             for k, s in porcar.items():
                 for p in s:
                     base = p.get("n")
-                    if base is None or base < MIN_CELDA:
+                    if base is None or (base < MIN_CELDA and g not in SIN_UMBRAL):
                         for campo in ("v", "n", "num", "cob", "media", "resp"):
                             p.pop(campo, None)
                         p["v"] = None
                 ind[clave][f"{k}|{g}"] = s
         for clave, porcar in dets.items():
             for k, porper in porcar.items():
-                detalle[clave][f"{k}|{g}"] = {c: [r for r in filas if r["n"] >= MIN_CELDA] for c, filas in porper.items()}
+                detalle[clave][f"{k}|{g}"] = {c: [r for r in filas if r["n"] >= MIN_CELDA or g in SIN_UMBRAL] for c, filas in porper.items()}
     MATRICULA = toda
 
 
