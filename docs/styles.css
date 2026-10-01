@@ -74,8 +74,49 @@ button, select { font-family:var(--font); }
 .chip-ayuda { font-size:11.5px; color:var(--ink3); }
 .legend [data-car], .lbl-car { cursor:pointer; }
 .legend [data-car]:hover { color:var(--ink); }
-.hrow[data-gse], .hrow[data-niv], .hrow[data-rf] { cursor:pointer; border-radius:5px; padding:3px 5px; margin:-3px -5px; }
-.hrow[data-gse]:hover, .hrow[data-niv]:hover, .hrow[data-rf]:hover { background:var(--paper2); }
+.hrow[data-gse], .hrow[data-niv], .hrow[data-rf], .hrow[data-gf], .hrow[data-gmom] { cursor:pointer; border-radius:5px; padding:3px 5px; margin:-3px -5px; }
+.hrow[data-gse]:hover, .hrow[data-niv]:hover, .hrow[data-rf]:hover, .hrow[data-gf]:hover, .hrow[data-gmom]:hover { background:var(--paper2); }
+
+/* pestañas dentro de una vista (Estudiantes: Rendimiento / Graduados) */
+.tabs { display:flex; gap:4px; border-bottom:2px solid var(--edge); margin-bottom:14px; flex-wrap:wrap; }
+.tab { background:none; border:0; border-bottom:3px solid transparent; margin-bottom:-2px; padding:9px 16px 8px;
+  font-size:14px; font-weight:700; color:var(--ink3); cursor:pointer; }
+.tab:hover { color:var(--ink); }
+.tab.on { color:var(--az-1); border-bottom-color:var(--acento); }
+.priv { font-size:11.5px; color:var(--ink3); background:var(--paper); border:1px dashed var(--edge2);
+  border-radius:var(--r); padding:8px 12px; margin:4px 0 12px; line-height:1.45; }
+.priv b { color:var(--ink2); }
+/* perfil: pirámide y mapa pulsables */
+.hrow[data-pf] { cursor:pointer; border-radius:5px; padding:3px 5px; margin:-3px -5px; }
+.hrow[data-pf]:hover { background:var(--paper2); }
+rect.pir, path.prov { cursor:pointer; }
+path.prov.fija { cursor:default; }
+/* vista general: dona y enlaces de panel */
+.dona { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.dona svg { width:150px; height:150px; flex:0 0 auto; }
+.dona svg circle { cursor:default; }
+.dona-ley { flex:1; min-width:150px; display:flex; flex-direction:column; gap:6px; }
+.dona-ley .dl { display:grid; grid-template-columns:12px 1fr auto; gap:8px; align-items:center; font-size:12.5px; color:var(--ink2); }
+.dona-ley .dl i { width:12px; height:12px; border-radius:3px; }
+.dona-ley .dl b { color:var(--ink); font-variant-numeric:tabular-nums; }
+.ph .ver { margin-left:auto; font-size:12px; color:var(--az-4); font-weight:700; text-decoration:none; white-space:nowrap; }
+.ph .ver:hover { color:var(--acento); }
+rect.pir:hover, path.prov:hover { filter:brightness(1.12); }
+/* tarjetas con ícono (vistas 1 y 4): filas parejas de 4 (o 5) */
+.kpis.k4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.kpis.k5 { grid-template-columns:repeat(5,minmax(0,1fr)); }
+.kpis.k3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+@media (max-width:1180px){ .kpis.k4, .kpis.k5, .kpis.k3 { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:560px){ .kpis.k4, .kpis.k5, .kpis.k3 { grid-template-columns:1fr; } }
+.kico { width:30px; height:30px; flex:0 0 auto; border-radius:8px; background:var(--ok-lt); display:inline-flex;
+  align-items:center; justify-content:center; margin-top:-2px; }
+.kico svg { width:17px; height:17px; fill:none; stroke:var(--az-3); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.kpi .top .kico + .lbl { padding-top:2px; }
+/* filtros separados de Estudiantes */
+.filtros-est { align-items:flex-end; }
+.filtros-est .fld select { min-width:150px; }
+.filtros-est > span { align-self:center; }
+svg.mapa-ec { max-height:430px; margin:0 auto; }
 table.res tr[data-niv], table.res tr[data-carsel] { cursor:pointer; }
 table.res tr[data-niv]:hover td, table.res tr[data-carsel]:hover td { background:var(--paper2); }
 
