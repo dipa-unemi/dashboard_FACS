@@ -1,4 +1,4 @@
-# Dashboard de Desempeño de la Carrera · FACS · UNEMI
+# Dashboard de Desempeño de la Carrera - FACS - UNEMI
 
 Tablero de seguimiento ACBSP de la Facultad de Ciencias de la Salud:
 Enfermería y Nutrición y Dietética.
