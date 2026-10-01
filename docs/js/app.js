@@ -103,7 +103,11 @@
     grad_fijo: ICO.documento, grad_sbu: ICO.dolar, grad_sup: ICO.escalera, grad_terc: ICO.tienda, grad_sinact: ICO.pausa,
     grad_compe: ICO.bombilla, grad_compg: ICO.libro, grad_conv: ICO.mano, grad_bolsa: ICO.lupa, grad_maest: ICO.birrete, grad_malla: ICO.cuadricula,
     doc_n: ICO.personas, doc_tc: ICO.reloj, doc_cuarto: ICO.libro, doc_phd: ICO.birrete, doc_maest: ICO.diploma,
-    doc_eval: ICO.estrella, doc_cap: ICO.bombilla, sat_doc: ICO.sonrisa, sat_est: ICO.sonrisa, sat_grad: ICO.diploma
+    doc_eval: ICO.estrella, doc_cap: ICO.bombilla, sat_doc: ICO.sonrisa, sat_est: ICO.sonrisa, sat_grad: ICO.diploma,
+    // vistas 3, 6, 7 y 8
+    pub_total: ICO.documento, doc_prod: ICO.lapiz, pub_alto: ICO.globo, pub_q12: ICO.estrella, pub_est: ICO.birrete, pub_proy: ICO.bombilla,
+    vin_proy: ICO.mano, vin_benef: ICO.personas, vin_avance: ICO.tendencia, vin_est: ICO.birrete, vin_culm: ICO.check,
+    sat_serv: ICO.sonrisa, tut_cob: ICO.mensaje, tut_ejec: ICO.calendario, tut_int: ICO.repetir, beca_cob: ICO.dolar
   };
   const VISTAS = [
     { id: 'inicio', num: '', nom: 'Vista general', obj: 'Lectura ejecutiva de los indicadores estratégicos de la carrera.' },
@@ -514,21 +518,13 @@
   }
 
   /* ---------- tarjeta KPI ---------- */
-  function spark(id) {
-    const pts = medir(id, st.car).pts.slice(-8);
-    if (pts.length < 2) return '';
-    const vs = pts.map(p => p.v), mn = Math.min(...vs), mx = Math.max(...vs), rg = mx - mn || 1;
-    const W = 84, H = 30, X = i => 3 + i * (W - 6) / (pts.length - 1), Y = v => H - 4 - (v - mn) / rg * (H - 8);
-    const d = pts.map((p, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join('');
-    return `<svg class="spark" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${d}" fill="none" stroke="${COL[st.car]}" stroke-width="1.8" stroke-linejoin="round" opacity=".85"/>` +
-      `<circle cx="${X(pts.length - 1)}" cy="${Y(pts[pts.length - 1].v)}" r="2.8" fill="${COL[st.car]}"/></svg>`;
-  }
   function kpi(id, o) {
     o = o || {};
     const c = CAT[id], m = medir(id, st.car), cur = m.cur;
     const tag = o.link ? 'button type="button"' : 'div';
     const attrs = o.link ? ` data-go="${c.vista}" data-foco="${id}"${c.sub ? ` data-sub="${c.sub}"` : ''}${c.gv ? ` data-gv="${c.gv}"` : ''}` : '';
-    const ico = o.icono ? `<span class="kico" aria-hidden="true"><svg viewBox="0 0 24 24">${KPI_IC[id] || KPI_IC._}</svg></span>` : '';
+    // Todas las tarjetas llevan ícono y no muestran el minigráfico (la evolución está en los gráficos de cada vista)
+    const ico = `<span class="kico" aria-hidden="true"><svg viewBox="0 0 24 24">${KPI_IC[id] || KPI_IC._}</svg></span>`;
     const lbl = `<div class="top">${ico}<span class="lbl">${c.tipo ? `<span style="color:var(--acento)">${esc(c.tipo)} - </span>` : ''}${esc(c.nombre)}</span>${info(id)}</div>`;
     const sinGse = (dimAct() || (enGrad() && st.gf) || (enTray() && st.tf)) && !soporta(id);
     const cls = 'kpi' + (sinGse ? ' nogse' : '');
@@ -541,7 +537,7 @@
     const t = tendencia(id, cur, m.prev), e = estado(id, st.car, cur.v);
     const base = sinGse ? `Sin desglose por ${st.gse ? 'nivel socioeconómico' : st.niv ? 'nivel de la carrera' : 'este grupo'}: muestra a toda la población` : baseTxt(id, cur);
     return `<${tag} class="${cls}" id="k-${id}"${attrs}>${lbl}` +
-      `<div class="mid"><div><div class="val">${valHTML(id, cur.v)}</div><div class="per">${esc(cur.l)}${m.prev ? ' - antes ' + esc(fmt(id, m.prev.v)) : ''}</div></div>${o.icono ? '' : spark(id)}</div>` +
+      `<div class="mid"><div><div class="val">${valHTML(id, cur.v)}</div><div class="per">${esc(cur.l)}${m.prev ? ' - antes ' + esc(fmt(id, m.prev.v)) : ''}</div></div></div>` +
       `<div class="base">${esc(base)}</div>` +
       `<div class="foot">${hayMeta(id) ? `<span class="meta">Meta: <b>${esc(metaTxt(id, st.car))}</b></span>` : `<span class="meta">vs. anterior</span>`}${t.html}${hayMeta(id) ? e.html : ''}</div></${tag.split(' ')[0]}>`;
   }
