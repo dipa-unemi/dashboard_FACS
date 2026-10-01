@@ -1,5 +1,5 @@
 /*
- * Dashboard de Desempeño de la Carrera · FACS · UNEMI
+ * Dashboard de Desempeño de la Carrera - FACS - UNEMI
  * Lee window.FACS_DATA (agregado por scripts/agregar_facs.py) y
  * window.FACS_INDICADORES (catálogo y metas). No hay microdatos en el navegador.
  *
@@ -12,7 +12,7 @@
  * carrera; pulsar un nivel socioeconómico recalcula los indicadores de
  * estudiantes para ese nivel. Lo que no tiene ese desglose lo dice en su tarjeta.
  *
- * Vista 1 · Estudiantes tiene dos pestañas, ambas exportadas desde R:
+ * Vista 1 - Estudiantes tiene dos pestañas, ambas exportadas desde R:
  *  - Rendimiento académico (window.FACS_REND), con su propio grupo de estudiantes
  *    (sexo, etnia, cohorte, tipo de ingreso, n.º de matrícula o banda de nota/asistencia).
  *  - Seguimiento a graduados (window.FACS_GRAD), por año de encuesta y momento
@@ -32,7 +32,7 @@
 (function () {
   'use strict';
   const D = window.FACS_DATA, CAT = window.FACS_INDICADORES, R = window.FACS_REND, G = window.FACS_GRAD, T = window.FACS_TRAY, P = window.FACS_PERFIL,
-    DOC = window.FACS_DOC;   // vista 4 · Cuerpo docente (indicadores_docentes_FACS_estandarizado.R)
+    DOC = window.FACS_DOC;   // vista 4 - Cuerpo docente (indicadores_docentes_FACS_estandarizado.R)
   /* Protección de datos: umbrales con que se exportaron los datos de la vista 1 (ver exportar_rendimiento_dashboard.R). */
   /* El perfil no aplica umbral (decisión de la Dirección); las demás pestañas sí. */
   const MIN_BASE = (R || T || G || {}).minBase || 0, K_ANON = (R || G || T || {}).kAnon || 0;
@@ -250,9 +250,9 @@
     if (!p) return '';
     const n = p.n, k = p.num;
     switch (id) {
-      case 'sat_est': case 'sat_serv': return `${num(n)} estudiantes encuestados` + (p.cob != null ? ` · ${num(p.cob, 0)} % de la matrícula` : '');
-      case 'sat_doc': return `${num(n)} docentes encuestados` + (p.cob != null ? ` · ${num(p.cob, 0)} % de la planta` : '');
-      case 'sat_grad': return `${num(n)} graduado${n === 1 ? '' : 's'} consultado${n === 1 ? '' : 's'}` + (n < 10 ? ' · base pequeña' : '');
+      case 'sat_est': case 'sat_serv': return `${num(n)} estudiantes encuestados` + (p.cob != null ? ` - ${num(p.cob, 0)} % de la matrícula` : '');
+      case 'sat_doc': return `${num(n)} docentes encuestados` + (p.cob != null ? ` - ${num(p.cob, 0)} % de la planta` : '');
+      case 'sat_grad': return `${num(n)} graduado${n === 1 ? '' : 's'} consultado${n === 1 ? '' : 's'}` + (n < 10 ? ' - base pequeña' : '');
       case 'doc_prod': return `${num(k)} de ${num(n)} docentes`;
       case 'pub_alto': case 'pub_est': return `${num(k)} de ${num(n)} artículos`;
       case 'tut_cob': case 'beca_cob': return `${num(k)} de ${num(n)} matriculados`;
@@ -263,10 +263,10 @@
       case 'rend_est': return `${num(n)} evaluaciones válidas`;
       case 'rend_rep': return `${num(p.e)} estudiantes`;
       case 'rend_aprob': case 'rend_reprob': case 'rend_nota': case 'rend_asist': case 'rend_exc': case 'rend_aband':
-        return `${num(n)} evaluaciones · ${num(p.e)} estudiantes`;
+        return `${num(n)} evaluaciones - ${num(p.e)} estudiantes`;
       case 'tray_mat': return p.parcial ? 'Año en curso: aún puede crecer' : 'Estudiantes únicos matriculados en el año';
       case 'tray_var': return 'Frente a la matrícula del año anterior';
-      case 'tray_ret': return `${num(k)} de ${num(n)} estudiantes` + (p.parcial ? ' · año en curso' : '');
+      case 'tray_ret': return `${num(k)} de ${num(n)} estudiantes` + (p.parcial ? ' - año en curso' : '');
       case 'tray_des': return `${num(k)} de ${num(n)} estudiantes`;
       case 'tray_ret1': return `${num(k)} de ${num(n)} estudiantes de la cohorte`;
       case 'tray_grad': case 'tray_gradt': return `${num(k)} titulados de ${num(n)} que ingresaron`;
@@ -275,15 +275,15 @@
       case 'perf_muj': case 'perf_gse': case 'perf_etn': case 'perf_disc': case 'perf_fuera': case 'perf_edad':
         return `${num(k)} de ${num(n)} estudiantes`;
       case 'doc_n': return p.parcial ? 'Año en curso: solo 1S 2026' : '';
-      case 'doc_eval': return `Sobre ${num(n)} docentes evaluados` + (p.a >= 2025 ? ' · nueva escala desde 2025' : '');
+      case 'doc_eval': return `Sobre ${num(n)} docentes evaluados` + (p.a >= 2025 ? ' - nueva escala desde 2025' : '');
       case 'doc_carga': return 'Promedio por periodo';
       case 'doc_phd': case 'doc_maest': case 'doc_cuarto': case 'doc_evalcob': case 'doc_cap': case 'doc_tc':
-        return `Sobre ${num(n)} docentes` + (p.parcial ? ' · año en curso' : '');
+        return `Sobre ${num(n)} docentes` + (p.parcial ? ' - año en curso' : '');
       case 'grad_resp': return `${num(p.u)} graduados únicos`;
       case 'grad_cob': return `${num(k)} de ${num(n)} titulados`;
       case 'grad_compe': case 'grad_compg': return `${num(k)} de ${num(n)} valoraciones`;
       default:
-        if (GRAD_IND.has(id)) return k == null ? `${num(n)} respuestas` : `${num(k)} de ${num(n)} graduados` + (n < 10 ? ' · base pequeña' : '');
+        if (GRAD_IND.has(id)) return k == null ? `${num(n)} respuestas` : `${num(k)} de ${num(n)} graduados` + (n < 10 ? ' - base pequeña' : '');
         return '';
     }
   }
@@ -507,7 +507,8 @@
       const valor = r.v == null ? (o.vacio || '—') : (o.fmt ? o.fmt(r.v) : num(r.v, 1) + ' %');
       return `<div class="${clase}"${pulsable} data-tip="${esc(t)}"><span class="hl">${esc(r.a)}</span>` +
         `<span class="hv">${esc(valor)}${d}</span>` +
-        `<span class="ht"><span class="hf" style="width:${Math.max(0, Math.min(100, (r.v || 0) / max * 100))}%;background:${r.color || o.color || COL[st.car]}"></span>` +
+        (r.v == null && o.vacio ? '<span class="ht"><span class="hf" style="width:4%;background:repeating-linear-gradient(45deg,#9aa7b3 0 3px,#d3dae0 3px 6px)"></span>'
+          : `<span class="ht"><span class="hf" style="width:${Math.max(0, Math.min(100, (r.v || 0) / max * 100))}%;background:${r.color || o.color || COL[st.car]}"></span>`) +
         (o.ref != null ? `<span class="hg" style="left:${o.ref / max * 100}%"></span>` : '') + '</span></div>';
     }).join('') + '</div>';
   }
@@ -528,7 +529,7 @@
     const tag = o.link ? 'button type="button"' : 'div';
     const attrs = o.link ? ` data-go="${c.vista}" data-foco="${id}"${c.sub ? ` data-sub="${c.sub}"` : ''}${c.gv ? ` data-gv="${c.gv}"` : ''}` : '';
     const ico = o.icono ? `<span class="kico" aria-hidden="true"><svg viewBox="0 0 24 24">${KPI_IC[id] || KPI_IC._}</svg></span>` : '';
-    const lbl = `<div class="top">${ico}<span class="lbl">${c.tipo ? `<span style="color:var(--acento)">${esc(c.tipo)} · </span>` : ''}${esc(c.nombre)}</span>${info(id)}</div>`;
+    const lbl = `<div class="top">${ico}<span class="lbl">${c.tipo ? `<span style="color:var(--acento)">${esc(c.tipo)} - </span>` : ''}${esc(c.nombre)}</span>${info(id)}</div>`;
     const sinGse = (dimAct() || (enGrad() && st.gf) || (enTray() && st.tf)) && !soporta(id);
     const cls = 'kpi' + (sinGse ? ' nogse' : '');
     const grupo = (REND_IND.has(id) && dimRend()) || (GRAD_IND.has(id) && dimGrad()) || (TRAY_IND.has(id) && dimTray() && trayAdmite(id, dimTray()));
@@ -540,7 +541,7 @@
     const t = tendencia(id, cur, m.prev), e = estado(id, st.car, cur.v);
     const base = sinGse ? `Sin desglose por ${st.gse ? 'nivel socioeconómico' : st.niv ? 'nivel de la carrera' : 'este grupo'}: muestra a toda la población` : baseTxt(id, cur);
     return `<${tag} class="${cls}" id="k-${id}"${attrs}>${lbl}` +
-      `<div class="mid"><div><div class="val">${valHTML(id, cur.v)}</div><div class="per">${esc(cur.l)}${m.prev ? ' · antes ' + esc(fmt(id, m.prev.v)) : ''}</div></div>${o.icono ? '' : spark(id)}</div>` +
+      `<div class="mid"><div><div class="val">${valHTML(id, cur.v)}</div><div class="per">${esc(cur.l)}${m.prev ? ' - antes ' + esc(fmt(id, m.prev.v)) : ''}</div></div>${o.icono ? '' : spark(id)}</div>` +
       `<div class="base">${esc(base)}</div>` +
       `<div class="foot">${hayMeta(id) ? `<span class="meta">Meta: <b>${esc(metaTxt(id, st.car))}</b></span>` : `<span class="meta">vs. anterior</span>`}${t.html}${hayMeta(id) ? e.html : ''}</div></${tag.split(' ')[0]}>`;
   }
@@ -566,6 +567,10 @@
 
   function lectura(items, titulo) {
     items = items.filter(Boolean);
+    // Grupo socioeconómico pequeño (el nivel alto): advertir antes de cualquier conclusión.
+    const base = st.gse && medir('tut_cob', st.car).cur;
+    if (items.length && base && base.n < 10) items.unshift(`Atención: en ${esc(base.l)} hay solo ${B(base.n === 1 ? '1 estudiante' : base.n + ' estudiantes')}${deGrupo()}` +
+      `${base.n > 1 ? `; cada uno mueve los porcentajes en ${num(100 / base.n)} puntos` : ''}. Estas cifras describen casos individuales, no tendencias.`);
     if (!items.length) return '';
     return `<div class="lectura"><h3><svg viewBox="0 0 24 24">${IC.idea}</svg>${esc(titulo || 'Lo que dicen los datos')}</h3><ul>${items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
   }
@@ -827,21 +832,21 @@
       `<div class="sec"><h3>Estudiantes</h3></div><div class="grid3 arriba">` +
       panelVer('Matrícula por año', 'estudiantes|tray', slot(el => columnChart(el, { xs: xsMat, legend: legMat, h: 210 })), 'Estudiantes únicos matriculados') +
       panelVer('Estudiantes por género', 'estudiantes|perfil', gen, 'Último año con datos') +
-      panelVer('Resultado de las evaluaciones', 'estudiantes|rend', evals, semEv ? `${esc(tick(semEv))} · asignaturas aprobadas y reprobadas` : '') +
+      panelVer('Resultado de las evaluaciones', 'estudiantes|rend', evals, semEv ? `${esc(tick(semEv))} - asignaturas aprobadas y reprobadas` : '') +
       `</div><div class="sec"><h3>Graduados, docentes y grupos de interés</h3></div><div class="grid3 arriba">` +
-      panelVer('Situación laboral de los graduados', 'estudiantes|grad', grad, gradY ? `${esc(gradY)} · todos los momentos de la encuesta` : '') +
-      panelVer('Nivel académico de los docentes', 'docentes', niv, nivY ? `${nivY} · título más alto verificado` : '') +
+      panelVer('Situación laboral de los graduados', 'estudiantes|grad', grad, gradY ? `${esc(gradY)} - todos los momentos de la encuesta` : '') +
+      panelVer('Nivel académico de los docentes', 'docentes', niv, nivY ? `${nivY} - título más alto verificado` : '') +
       panelVer('Satisfacción de los grupos de interés', 'grupos', sat.length ? hbars(sat, { max: 100, color: '#335f7f', tip: r => `${r.a}: ${num(r.v, 1)} % (${r.n})` }) : '<div class="empty"><b>Sin datos</b></div>',
         'Porcentaje de valoraciones positivas, última medición') +
       `</div><div class="sec"><h3>Investigación, vinculación y servicios de apoyo</h3></div><div class="grid3 arriba">` +
-      panelVer('Artículos publicados por año', 'investigacion', slot(el => columnChart(el, { xs: columnasDe('pub_total'), h: 210 })), 'Artículos únicos aprobados · * año en curso') +
+      panelVer('Artículos publicados por año', 'investigacion', slot(el => columnChart(el, { xs: columnasDe('pub_total'), h: 210 })), 'Artículos únicos aprobados - * año en curso') +
       panelVer('Proyectos de vinculación por año', 'vinculacion', slot(el => columnChart(el, { xs: columnasDe('vin_proy'), h: 210 })), 'Proyectos aprobados según año de inicio') +
       panelVer('Servicios de apoyo', 'apoyo', apoyo.length ? hbars(apoyo, { max: 100, color: '#4597bf', tip: r => `${r.a}: ${num(r.v, 1)} % (${r.n})` }) : '<div class="empty"><b>Sin datos</b></div>',
         'Cobertura y satisfacción, última medición') +
       `</div>` + lectura(destacados, 'Lo más destacado');   // la síntesis va al final, después de los gráficos
   }
 
-  /* ---------------- Vista 1 · Rendimiento académico ---------------- */
+  /* ---------------- Vista 1 - Rendimiento académico ---------------- */
   const REND_CAT = ['Reprobado', 'Aprobado', 'Bueno', 'Muy Bueno', 'Excelente'];
   const REND_COL = ['#f48521', '#a9cde2', '#4597bf', '#335f7f', '#1c3247'];
   const BANDAS = Array.from({ length: 20 }, (_, i) => String(i * 5).padStart(2, '0') + '-' + (i === 19 ? '100' : String(i * 5 + 4).padStart(2, '0')));
@@ -960,7 +965,7 @@
     if (dim && !dim.startsWith('numero_matricula:')) matHTML = sinCruce('El número de matrícula no se cruza con otro grupo de estudiantes.');
     else {
       const rows = ['1', '2', '3', '4'].map(n => { const r = p && (RF[c + '|numero_matricula:' + n] || {})[p]; return r && { a: n + '.ª matrícula', rf: 'numero_matricula:' + n, v: r.pa, ev: r.ev, e: r.e }; }).filter(Boolean);
-      matHTML = hbars(rows, { max: 100, color: COL[c], tip: r => `${r.a}: ${num(r.v, 1)} % de aprobación\n${num(r.ev)} evaluaciones · ${num(r.e)} estudiantes` });
+      matHTML = hbars(rows, { max: 100, color: COL[c], tip: r => `${r.a}: ${num(r.v, 1)} % de aprobación\n${num(r.ev)} evaluaciones - ${num(r.e)} estudiantes` });
     }
 
     // Rendimiento por nivel
@@ -986,7 +991,7 @@
 
     const dN = distDe('n'), dA = distDe('a');
     const histo = (d, o) => d ? slot(el => histChart(el, d, o)) : sinCruce(dim && /^N\d$/.test(dim) ? 'Los histogramas no tienen desglose por nivel.' : 'No hay histograma publicado para este grupo.');
-    const notaP = p ? esc(lblDe(p)) + (dim ? ' · ' + esc(st.niv ? nivNom(st.niv) : st.gse ? 'Nivel socioeconómico ' + GSE_NOM[st.gse].toLowerCase() : rfNom(dim)) : '') : '';
+    const notaP = p ? esc(lblDe(p)) + (dim ? ' - ' + esc(st.niv ? nivNom(st.niv) : st.gse ? 'Nivel socioeconómico ' + GSE_NOM[st.gse].toLowerCase() : rfNom(dim)) : '') : '';
 
     return barra + `<div class="kpis ${ids.length === 5 ? 'k5' : 'k4'}">${ids.map(id => kpi(id, { icono: true })).join('')}</div>` + lectura(insRend()) +
       `<div class="grid3">` +
@@ -998,18 +1003,18 @@
       panel('Escala institucional', null, escala, 'Categorías de valoración y su peso en el semestre de referencia') +
       `</div><div class="grid2">` +
       panel('Distribución de notas', 'rend_nota', histo(dN, { tipo: 'banda_nota', ref: R.notaAprobacion, refTxt: 'Aprueba ' + R.notaAprobacion, eje: 'Nota', color: COL[c] }),
-        dN ? `${esc(lblDe(dN.p))} · bandas de 5 puntos; en naranja, bajo la nota de aprobación` : '') +
+        dN ? `${esc(lblDe(dN.p))} - bandas de 5 puntos; en naranja, bajo la nota de aprobación` : '') +
       panel('Distribución de asistencia', 'rend_asist', histo(dA, { tipo: 'banda_asistencia', ref: R.umbralAsistencia, refTxt: 'Umbral ' + R.umbralAsistencia + ' %', eje: 'Asistencia', color: COL[c] }),
-        dA ? `${esc(lblDe(dA.p))} · bandas de 5 puntos; en naranja, bajo el umbral institucional` : '') +
+        dA ? `${esc(lblDe(dA.p))} - bandas de 5 puntos; en naranja, bajo el umbral institucional` : '') +
       `</div><div class="grid2 wl arriba">` +
-      panel('Rendimiento por nivel', 'rend_reprob', nivHTML, p ? `${esc(lblDe(p))} · pulsa un nivel para filtrar el tablero` : '') +
-      panel('Aprobación por número de matrícula', 'rend_rep', matHTML, p ? `${esc(lblDe(p))} · pulsa una matrícula para filtrar` : '') +
+      panel('Rendimiento por nivel', 'rend_reprob', nivHTML, p ? `${esc(lblDe(p))} - pulsa un nivel para filtrar el tablero` : '') +
+      panel('Aprobación por número de matrícula', 'rend_rep', matHTML, p ? `${esc(lblDe(p))} - pulsa una matrícula para filtrar` : '') +
       `</div>` +
       panel('Detalle de rendimiento por carrera', null, carHTML, notaP) +
       tabla(ids);
   }
 
-  /* ---------------- Vista 1 · Seguimiento a graduados ---------------- */
+  /* ---------------- Vista 1 - Seguimiento a graduados ---------------- */
   const GV = { tray: 'Trayectoria', empleo: 'Condiciones del empleo', form: 'Formación y vinculación' };
   const GV_IDS = {
     tray: ['grad_empleab', 'grad_ins6', 'grad_afin', 'grad_cob', 'grad_resp'],
@@ -1045,7 +1050,7 @@
     const d = gDist(variable);
     return panel(titulo, id || null,
       d ? hbars(d.rows, { max: 100, color: COL[st.car], tip: gTip }) : '<div class="empty"><b>Sin respuestas para esta pregunta</b>No se pregunta en este momento de la encuesta o no hay respuestas con los filtros elegidos.</div>',
-      d ? `Encuesta ${esc(d.y)} · ${esc(MOMENTOS[st.gmom].toLowerCase())} · ${num(d.b)} respuestas${nota ? ' · ' + nota : ''}` : (nota || ''));
+      d ? `Encuesta ${esc(d.y)} - ${esc(MOMENTOS[st.gmom].toLowerCase())} - ${num(d.b)} respuestas${nota ? ' - ' + nota : ''}` : (nota || ''));
   }
 
   function insGrad() {
@@ -1075,7 +1080,7 @@
     const segV = Object.entries(GV).map(([k, l]) => `<button type="button" class="segbtn ${st.gv === k ? 'on' : ''}" data-gv="${k}">${l}</button>`).join('');
     const segM = Object.entries(MOMENTOS).map(([k, l]) => `<button type="button" class="segbtn ${st.gmom === k ? 'on' : ''}" data-gmom="${k}">${k === 'T' ? 'Todos' : l}</button>`).join('');
     const barra = `<div class="rfbar"><label>Vista</label><div class="segbtns">${segV}</div><label>Momento</label><div class="segbtns">${segM}</div>` +
-      `<span>${st.gmom === 'T' ? 'Con «Todos» se suman los tres momentos: para comparar, elige uno.' : 'Encuesta ' + (y || '—') + ' · ' + esc(MOMENTOS[st.gmom].toLowerCase()) + '.'}</span></div>` +
+      `<span>${st.gmom === 'T' ? 'Con «Todos» se suman los tres momentos: para comparar, elige uno.' : 'Encuesta ' + (y || '—') + ' - ' + esc(MOMENTOS[st.gmom].toLowerCase()) + '.'}</span></div>` +
       filtrosEst('grad', Object.keys(G.kpi), ['gse', 'sexo'],
         `Un filtro a la vez.${st.niv ? ' El nivel de la carrera no aplica a graduados: se muestran todos.' : ''}`);
 
@@ -1084,7 +1089,7 @@
       const LIN = [['grad_empleab', 'Empleabilidad'], ['grad_ins6', 'Empleo en ≤ 6 meses'], ['grad_afin', 'Empleo afín'], ['grad_fijo', 'Contrato fijo']];
       const segL = LIN.map(([k, l]) => `<button type="button" class="segbtn ${st.glin === k ? 'on' : ''}" data-glin="${k}">${l}</button>`).join('');
       const linea = `<div class="panel"><div class="ph"><h3>Evolución por año de encuesta</h3>${info(st.glin)}<span style="flex:1"></span><div class="segbtns">${segL}</div></div>` +
-        `<p class="ph-note">${esc(MOMENTOS[st.gmom])} · punto hueco: menos de 10 respuestas</p>${slot(el => lineChart(el, st.glin, { h: 230 }))}</div>`;
+        `<p class="ph-note">${esc(MOMENTOS[st.gmom])} - punto hueco: menos de 10 respuestas</p>${slot(el => lineChart(el, st.glin, { h: 230 }))}</div>`;
       // Respuestas por momento, sexo y nivel socioeconómico (pulsables)
       const kk = (G.kpi[claveGrad(c)] || {})[y] || {};
       const rMom = ['1', '2', '3'].filter(m => kk[m]).map(m => ({ a: MOMENTOS[m], gm: m, v: kk[m][0] }));
@@ -1102,9 +1107,9 @@
       const cobHTML = `<div class="tbl-wrap"><table class="res"><thead><tr><th>Carrera</th><th class="n">Titulados</th><th class="n">Encuestados</th><th class="n">Cobertura</th>${anCob.map(a => `<th class="n">Titulados ${a}</th>`).join('')}</tr></thead><tbody>${cobRows}</tbody></table></div>`;
       cuerpo = linea +
         `<div class="grid2 arriba">` + gPanel('Situación laboral', 'situacion_laboral', 'grad_empleab') +
-        panel('Respuestas por momento', 'grad_resp', rMom.length ? cnt(rMom, 'Clic: filtrar por este momento') : '<div class="empty"><b>Sin respuestas</b></div>', notaY + ' · pulsa un momento para filtrar') + `</div>` +
-        `<div class="grid2 arriba">` + panel('Respuestas por sexo', 'grad_resp', cnt(rSex, 'Clic: filtrar por este grupo'), notaY + ' · ' + esc(MOMENTOS[st.gmom].toLowerCase())) +
-        panel('Respuestas por nivel socioeconómico', 'grad_resp', cnt(rGse, 'Clic: filtrar por este grupo'), notaY + ' · nivel registrado al ingresar a la carrera') + `</div>` +
+        panel('Respuestas por momento', 'grad_resp', rMom.length ? cnt(rMom, 'Clic: filtrar por este momento') : '<div class="empty"><b>Sin respuestas</b></div>', notaY + ' - pulsa un momento para filtrar') + `</div>` +
+        `<div class="grid2 arriba">` + panel('Respuestas por sexo', 'grad_resp', cnt(rSex, 'Clic: filtrar por este grupo'), notaY + ' - ' + esc(MOMENTOS[st.gmom].toLowerCase())) +
+        panel('Respuestas por nivel socioeconómico', 'grad_resp', cnt(rGse, 'Clic: filtrar por este grupo'), notaY + ' - nivel registrado al ingresar a la carrera') + `</div>` +
         panel('Cobertura del seguimiento por carrera', 'grad_cob', cobHTML, 'Titulados que respondieron al menos una encuesta, sobre el total de titulados');
     } else if (st.gv === 'empleo') {
       cuerpo = `<div class="grid3">` +
@@ -1118,7 +1123,7 @@
       const ck = G.comp[claveGrad(c)], yC = gUltimo(ck, x => x && x.length);
       const compRows = (tipo) => (yC ? ck[yC][st.gmom] : []).filter(r => r[0] === tipo)
         .map(r => ({ a: G.competencias[r[1]], v: r[5], n: r[2], k: r[3], media: r[4] }));
-      const tipC = r => `${r.a}\n${num(r.v, 1)} % en alto grado (6 o 7) · promedio ${num(r.media, 2)} de 7\n${num(r.n)} respuestas`;
+      const tipC = r => `${r.a}\n${num(r.v, 1)} % en alto grado (6 o 7) - promedio ${num(r.media, 2)} de 7\n${num(r.n)} respuestas`;
       const compG = compRows('G'), compE = compRows('E');
       const resumen = ['grad_compg', 'grad_compe', 'grad_malla'].map(id => { const m = medir(id, c).cur; return m && { a: CAT[id].nombre, v: m.v, n: m.n }; }).filter(Boolean);
       const vacioC = '<div class="empty"><b>Sin valoraciones de competencias</b>Se preguntan al titularse: elige ese momento o «Todos».</div>';
@@ -1126,9 +1131,9 @@
         gPanel('Relación entre el empleo y la profesión', 'relacion_empleo', 'grad_afin') +
         panel('Competencias adquiridas y malla curricular', 'grad_compg', resumen.length ? hbars(resumen, { max: 100, color: COL[c], tip: r => `${r.a}: ${num(r.v, 1)} % en alto grado\n${num(r.n)} valoraciones o respuestas` }) : vacioC, 'Porcentaje que valora en alto grado (6 o 7 de 7)') + `</div>` +
         `<div class="grid2 arriba">` +
-        panel('Competencias generales adquiridas', 'grad_compg', compG.length ? hbars(compG, { max: 100, color: '#335f7f', tip: tipC }) : vacioC, yC ? `Encuesta ${esc(yC)} · % que la valora en alto grado` : '') +
+        panel('Competencias generales adquiridas', 'grad_compg', compG.length ? hbars(compG, { max: 100, color: '#335f7f', tip: tipC }) : vacioC, yC ? `Encuesta ${esc(yC)} - % que la valora en alto grado` : '') +
         panel('Competencias específicas adquiridas', 'grad_compe', compE.length ? hbars(compE, { max: 100, color: '#4597bf', tip: tipC }) : vacioC,
-          (yC ? `Encuesta ${esc(yC)} · % que la valora en alto grado` : '') + (c === 'FACS' ? ' · con toda la facultad se mezclan las de ambas carreras' : '')) + `</div>` +
+          (yC ? `Encuesta ${esc(yC)} - % que la valora en alto grado` : '') + (c === 'FACS' ? ' - con toda la facultad se mezclan las de ambas carreras' : '')) + `</div>` +
         `<div class="grid3">` +
         gPanel('Canal de búsqueda de empleo', 'canal_busqueda', null) +
         gPanel('Medio por el que consiguió el empleo', 'medio_empleo', 'grad_bolsa') +
@@ -1140,7 +1145,7 @@
       tabla(st.gv === 'form' ? ids.concat('grad_malla') : ids);
   }
 
-  /* ---------------- Vista 1 · Trayectoria estudiantil ---------------- */
+  /* ---------------- Vista 1 - Trayectoria estudiantil ---------------- */
   function insTray() {
     const out = [], c = st.car;
     if (!T) return out;
@@ -1210,12 +1215,12 @@
       panel('Graduación oportuna por cohorte', 'tray_grad', slot(el => lineChart(el, 'tray_grad', { h: 215 })), 'Cohortes de ingreso con la ventana de graduación cerrada') +
       panel('Retención de primer año por cohorte', 'tray_ret1', slot(el => lineChart(el, 'tray_ret1', { h: 215 })), 'Porcentaje de la cohorte que sigue al año de ingresar') +
       `</div><div class="grid2 wl arriba">` +
-      panel('Seguimiento por cohorte de ingreso', 'tray_grad', tCoh, 'Duración: 9 niveles · graduación oportuna = duración + 2 semestres') +
+      panel('Seguimiento por cohorte de ingreso', 'tray_grad', tCoh, 'Duración: 9 niveles - graduación oportuna = duración + 2 semestres') +
       panel('Titulados por año', 'tray_tit', slot(el => columnChart(el, { xs: xsTit, h: 225 })), trayAdmite('tray_tit', dim) ? '' : 'Sin desglose por tipo de ingreso: muestra a todos') +
       `</div>` + tabla(ids);
   }
 
-  /* ---------------- Vista 1 · Perfil estudiantil sociodemográfico ----------------
+  /* ---------------- Vista 1 - Perfil estudiantil sociodemográfico ----------------
      Filtro cruzado: cada clic en una barra, en la pirámide o en el mapa agrega (o quita) un filtro,
      y todo se recalcula con los filtros combinados. Cada gráfico muestra todas sus categorías
      (ignora su propio filtro) y resalta la elegida. */
@@ -1255,8 +1260,8 @@
     const cs = cuentaSexo || cuenta, selS = st.pc.sexo;
     const nH = perfCat(cs, 'sexo', 'Hombre'), nM = perfCat(cs, 'sexo', 'Mujer'), tS = nH + nM || 1;
     const x0b = 12, wb = W - 24, wH = nH / tS * wb;
-    let g = `<text x="${x0b}" y="16" font-size="12.5" font-weight="700" fill="#335f7f">Hombres ${num(pct1(nH, tS), 1)} %<tspan font-weight="400" fill="#6f8596"> · ${num(nH)}</tspan></text>` +
-      `<text x="${x0b + wb}" y="16" text-anchor="end" font-size="12.5" font-weight="700" fill="#b86200">Mujeres ${num(pct1(nM, tS), 1)} %<tspan font-weight="400" fill="#6f8596"> · ${num(nM)}</tspan></text>` +
+    let g = `<text x="${x0b}" y="16" font-size="12.5" font-weight="700" fill="#335f7f">Hombres ${num(pct1(nH, tS), 1)} %<tspan font-weight="400" fill="#6f8596"> - ${num(nH)}</tspan></text>` +
+      `<text x="${x0b + wb}" y="16" text-anchor="end" font-size="12.5" font-weight="700" fill="#b86200">Mujeres ${num(pct1(nM, tS), 1)} %<tspan font-weight="400" fill="#6f8596"> - ${num(nM)}</tspan></text>` +
       `<rect x="${x0b}" y="24" width="${Math.max(wH, 0)}" height="10" fill="#335f7f" rx="2" data-pf="sexo:Hombre" class="pir" opacity="${selS && selS !== 'Hombre' ? .4 : 1}" data-tip="${esc('Hombres: ' + num(nH) + ' estudiantes\nClic: ' + (selS === 'Hombre' ? 'quitar el filtro' : 'filtrar por hombres'))}"/>` +
       `<rect x="${x0b + wH}" y="24" width="${Math.max(wb - wH, 0)}" height="10" fill="#f48521" rx="2" data-pf="sexo:Mujer" class="pir" opacity="${selS && selS !== 'Mujer' ? .4 : 1}" data-tip="${esc('Mujeres: ' + num(nM) + ' estudiantes\nClic: ' + (selS === 'Mujer' ? 'quitar el filtro' : 'filtrar por mujeres'))}"/>` +
       `<text x="${mid - lab / 2 - 4}" y="${mt - 8}" text-anchor="end" font-size="11" font-weight="700" fill="#335f7f">Hombres</text>` +
@@ -1268,7 +1273,7 @@
         const n = cuenta.pir[s + '|' + e] || 0, x0 = mid + dir * lab / 2, w = n / vmax * half;
         const sel = st.pc.sexo === s && st.pc.edad === e, mut = (st.pc.sexo || st.pc.edad) && !sel;
         g += `<rect class="pir" data-pir="${s}|${e}" x="${dir < 0 ? x0 - w : x0}" y="${y + 4}" width="${Math.max(w, 1)}" height="${rowH - 8}" fill="${col}" rx="2" opacity="${mut ? .4 : 1}"` +
-          `${sel ? ' stroke="#1c3247" stroke-width="1.5"' : ''} data-tip="${esc(s + 's · ' + e + ' años: ' + num(n) + ' estudiantes\nClic: ' + (sel ? 'quitar el filtro' : 'filtrar por este grupo'))}"/>` +
+          `${sel ? ' stroke="#1c3247" stroke-width="1.5"' : ''} data-tip="${esc(s + 's - ' + e + ' años: ' + num(n) + ' estudiantes\nClic: ' + (sel ? 'quitar el filtro' : 'filtrar por este grupo'))}"/>` +
           `<text x="${x0 + dir * (w + 5)}" y="${y + rowH / 2 + 4}" text-anchor="${dir < 0 ? 'end' : 'start'}" font-size="11" font-weight="700" fill="#1c3247">${num(n)}</text>`;
       });
     });
@@ -1301,7 +1306,7 @@
     const ley = '<div class="legend">' + CORTES.slice().reverse().map(([c, col], i, arr) =>
       `<span><i class="box" style="background:${col}"></i>${i < arr.length - 1 ? (arr[i + 1][0] - 1 > c ? num(c) + '–' + num(arr[i + 1][0] - 1) : num(c)) : num(c) + ' o más'}</span>`).join('') + '</div>';
     el.innerHTML = ley + `<svg class="chart mapa-ec" viewBox="${M.viewBox}" role="img" aria-label="${esc(uni)} por provincia">${g}</svg>` +
-      `<p class="ph-note" style="margin:4px 0 0">Ecuador continental.${fuera.length ? ' No se dibujan: ' + fuera.map(([v, n]) => `${v === 'Galápagos' ? v : v.toLowerCase()} ${num(n)}`).join(' · ') + '.' : ''}</p>`;
+      `<p class="ph-note" style="margin:4px 0 0">Ecuador continental.${fuera.length ? ' No se dibujan: ' + fuera.map(([v, n]) => `${v === 'Galápagos' ? v : v.toLowerCase()} ${num(n)}`).join(' - ') + '.' : ''}</p>`;
   }
   function mapaEcuador(el, cuenta) {   // perfil de estudiantes: desde el filtro cruzado
     const conteo = {};
@@ -1342,7 +1347,7 @@
       return hbars(rows, { max: o.max || 100, color: o.color || COL[c], fmt: v => num(v, 1) + ' %',
         tip: r => `${r.a}: ${num(r.n)} estudiantes (${num(r.v, 1)} %)` + (o.detalle ? o.detalle(r, cu) : '') });
     };
-    const notaY = a ? `${a}${a === D.anioActual ? ' (año en curso)' : ''} · porcentaje de estudiantes · pulsa para filtrar` : '';
+    const notaY = a ? `${a}${a === D.anioActual ? ' (año en curso)' : ''} - porcentaje de estudiantes - pulsa para filtrar` : '';
 
     // Matrícula por sexo y año, con los filtros activos
     const xsSex = P_ANIOS.filter(x => x <= anioCorte()).map(x => {
@@ -1356,23 +1361,23 @@
     return barra + `<div class="kpis k3">${ids.map(id => kpi(id, { icono: true })).join('')}</div>` + lectura(insPerfil(a)) +
       `<div class="grid2 arriba">` +
       panel('Estructura por sexo y edad de ingreso', 'perf_muj', slot(el => piramide(el, a ? perfContar(a, c, null) : null, a ? perfContar(a, c, 'sexo') : null)),
-        a ? `${a} · arriba, el porcentaje por género; abajo, estudiantes por edad de ingreso · pulsa para filtrar` : '') +
+        a ? `${a} - arriba, el porcentaje por género; abajo, estudiantes por edad de ingreso - pulsa para filtrar` : '') +
       panel('Matrícula por sexo', 'perf_muj', slot(el => columnChart(el, { xs: xsSex, legend: legSex, h: 235 })), 'Estudiantes matriculados por año, con los filtros activos') +
       `</div><div class="grid2 arriba">` +
-      panel('Procedencia por provincia', 'perf_fuera', slot(el => mapaEcuador(el, a ? perfContar(a, c, 'origen') : { n: 0, d: { origen: [] } })), a ? `${a} · provincia de procedencia registrada · pasa el mouse para ver el número y pulsa para filtrar` : '') +
+      panel('Procedencia por provincia', 'perf_fuera', slot(el => mapaEcuador(el, a ? perfContar(a, c, 'origen') : { n: 0, d: { origen: [] } })), a ? `${a} - provincia de procedencia registrada - pasa el mouse para ver el número y pulsa para filtrar` : '') +
       panel('Nivel socioeconómico', 'perf_gse', dist('gse', { orden: ['Bajo', 'Medio bajo', 'Medio típico', 'Medio alto', 'Alto'] }), notaY) +
       `</div><div class="grid3">` +
-      panel('Autoidentificación étnica', 'perf_etn', dist('etnia', { max: etnMax }), notaY + ' · escala ampliada para ver los grupos pequeños') +
+      panel('Autoidentificación étnica', 'perf_etn', dist('etnia', { max: etnMax }), notaY + ' - escala ampliada para ver los grupos pequeños') +
       panel('Edad de ingreso a la carrera', 'perf_edad', dist('edad', { orden: EDADES.concat('Sin dato válido'), color: '#4597bf' }), notaY) +
       panel('Discapacidad', 'perf_disc', dist('disc', { color: '#335f7f', detalle: (r, cu) => {
         if (r.a !== 'Con discapacidad' || !cu.d.disct) return '';
         const tipos = P.valores.disct.map((v, i) => [v, cu.d.disct[i]]).filter(([v, n]) => n && v !== 'Sin discapacidad').sort((x, y) => y[1] - x[1]);
         return tipos.length ? '\nPor tipo:\n' + tipos.map(([v, n]) => `· ${v}: ${num(n)}`).join('\n') : '';
-      } }), notaY + ' · pasa el mouse sobre «Con discapacidad» para ver los tipos') +
+      } }), notaY + ' - pasa el mouse sobre «Con discapacidad» para ver los tipos') +
       `</div>` + tabla(ids);
   }
 
-  /* ---------------- Vista 1 · Estudiantes: cuatro pestañas ---------------- */
+  /* ---------------- Vista 1 - Estudiantes: cuatro pestañas ---------------- */
   function vEst() {
     const tabs = [['tray', 'Trayectoria'], ['perfil', 'Perfil sociodemográfico'], ['rend', 'Rendimiento académico'], ['grad', 'Seguimiento a graduados']].map(([k, l]) =>
       `<button type="button" role="tab" class="tab ${st.sub === k ? 'on' : ''}" aria-selected="${st.sub === k}" data-sub="${k}">${l}</button>`).join('');
@@ -1385,7 +1390,7 @@
       (st.sub === 'grad' ? vGrad() : st.sub === 'rend' ? vRend() : st.sub === 'perfil' ? vPerfil() : vTray()) + priv;
   }
 
-  /* ---------------- Vista 4 · Cuerpo docente ---------------- */
+  /* ---------------- Vista 4 - Cuerpo docente ---------------- */
   /* Detalle del último año con datos hasta el año elegido. */
   function docDet(car) {
     const an = (DOC && DOC.det[car]) || {}, ys = Object.keys(an).filter(y => +y <= anioCorte()).sort();
@@ -1434,33 +1439,33 @@
 
     return `<div class="kpis k4">${ids.map(id => kpi(id, { icono: true })).join('')}</div>` + lectura(insDoc()) +
       `<div class="grid2">` +
-      panel('Evolución de la planta docente', 'doc_n', slot(el => lineChart(el, 'doc_n', { h: 225 })), 'Docentes únicos por año · punto hueco: año en curso') +
+      panel('Evolución de la planta docente', 'doc_n', slot(el => lineChart(el, 'doc_n', { h: 225 })), 'Docentes únicos por año - punto hueco: año en curso') +
       panel('Nivel académico', 'doc_cuarto', slot(el => columnChart(el, { xs: xsNiv, legend: legNiv, ymax: 100, pct: true, sinTotal: true, fmt: v => num(v, 1) + ' %', h: 225 })), 'Título más alto verificado en el SGA, por año') +
       `</div><div class="grid3">` +
       panel('Docentes con grado doctoral', 'doc_phd', slot(el => lineChart(el, 'doc_phd', { h: 200 })), 'Porcentaje con PhD') +
-      panel('Evaluación docente satisfactoria', 'doc_eval', slot(el => lineChart(el, 'doc_eval', { h: 200 })), 'Resultado ≥ 4,0 de 5 · <b>desde 2025 cambia la escala</b>') +
+      panel('Evaluación docente satisfactoria', 'doc_eval', slot(el => lineChart(el, 'doc_eval', { h: 200 })), 'Resultado ≥ 4,0 de 5 - <b>desde 2025 cambia la escala</b>') +
       panel('Participación en capacitación', 'doc_cap', slot(el => lineChart(el, 'doc_cap', { h: 200 })), 'Al menos un curso en los últimos 12 meses') +
       `</div><div class="grid2 arriba">` +
       panel('Evaluación de desempeño docente por componente', 'doc_eval', evHTML,
-        `${notaY} · promedio de 1 a 5; la línea vertical marca el umbral ${num(DOC.umbralEval, 1)}`) +
+        `${notaY} - promedio de 1 a 5; la línea vertical marca el umbral ${num(DOC.umbralEval, 1)}`) +
       `<div>` +
       panel('Dedicación', 'doc_tc', barras(d && d.dedicacion), notaY) +
       panel('Tipo de capacitación', 'doc_cap', capRows.length ? hbars(capRows, { max: 100, color: '#4597bf', fmt: v => num(v, 1) + ' %', tip: r => `${r.a}: ${num(r.n)} docentes` }) +
         (cap.horas != null ? `<p class="ph-note" style="margin:8px 0 0">Los docentes capacitados suman en promedio ${num(cap.horas, 1)} horas en 12 meses.</p>` : '') : '<div class="empty"><b>Sin datos para este año</b></div>',
-        `${notaY} · porcentaje de docentes con al menos un curso de cada tipo en los últimos 12 meses`) +
+        `${notaY} - porcentaje de docentes con al menos un curso de cada tipo en los últimos 12 meses`) +
       `</div></div><div class="hsub" style="margin:4px 0 8px">Perfil demográfico del cuerpo docente</div><div class="grid2 arriba">` +
       panel('Procedencia por provincia', 'doc_n', slot(el => {
         const filas = (d && d.provincia) || [], conteo = {}, tot = filas.reduce((s, [, n]) => s + n, 0);
         filas.forEach(([p, n]) => { conteo[p] = n; });
         mapaProv(el, conteo, tot, { unidad: 'docentes', cortes: [[50, '#1c3247'], [10, '#335f7f'], [4, '#4597bf'], [2, '#8fbcd8'], [1, '#cfe2ee']] });
-      }), `${notaY} · provincia registrada del docente en el SGA · pasa el mouse para ver el número`) +
+      }), `${notaY} - provincia registrada del docente en el SGA - pasa el mouse para ver el número`) +
       `<div>` +
       panel('Sexo', 'doc_n', barras(d && d.sexo, { color: '#f48521' }), notaY) +
       panel('Edad', 'doc_n', barras(d && d.edad, { color: '#4597bf' }), notaY) +
       `</div></div><div class="grid2 arriba">` +
-      panel('Autoidentificación étnica', 'doc_n', barras(d && d.etnia, { color: '#335f7f' }), notaY + ` · categorías con menos de ${DOC.kAnon} docentes agrupadas`) +
+      panel('Autoidentificación étnica', 'doc_n', barras(d && d.etnia, { color: '#335f7f' }), notaY + ` - categorías con menos de ${DOC.kAnon} docentes agrupadas`) +
       panel('Discapacidad', 'doc_n', barras(d && d.disc, { color: '#335f7f', detalle: r => r.a === 'Con discapacidad' && d.disc_tipo && d.disc_tipo.length
-        ? '\nPor tipo:\n' + d.disc_tipo.map(([t, n]) => `· ${t}: ${num(n)}`).join('\n') : '' }), notaY + ' · pasa el mouse sobre «Con discapacidad» para ver los tipos') +
+        ? '\nPor tipo:\n' + d.disc_tipo.map(([t, n]) => `· ${t}: ${num(n)}`).join('\n') : '' }), notaY + ' - pasa el mouse sobre «Con discapacidad» para ver los tipos') +
       `</div>` + tabla(['doc_n', 'doc_tc', 'doc_cuarto', 'doc_phd', 'doc_maest', 'doc_evalcob', 'doc_eval', 'doc_cap', 'doc_carga']);
   }
 
@@ -1484,7 +1489,7 @@
     }
     const sg = medir('sat_grad', c);
     if (sg.cur) out.push(`${B(fmt('sat_grad', sg.cur.v))} de los graduados consultados en ${esc(sg.cur.l)} se declara satisfecho con los estudios realizados` +
-      (sg.cur.n < 10 ? ` (solo ${num(sg.cur.n)} respuestas: conviene leerlo con cautela)` : '') + '.');
+      (sg.cur.n < 10 ? ` (solo ${num(sg.cur.n)} ${sg.cur.n === 1 ? 'graduado ha respondido' : 'graduados han respondido'} en ${esc(sg.cur.l)}; con tan pocas respuestas, una sola persona cambia el resultado en ${num(100 / sg.cur.n)} puntos)` : '') + '.');
     const sd = medir('sat_doc', c), dd = ultimoDet(D.det.sat_doc[c]);
     if (sd.cur && dd && dd.rows.length > 1) {
       const lo = dd.rows[dd.rows.length - 1];
@@ -1498,17 +1503,17 @@
     let det = '';
     if (grupoDet === 'est') {
       const d = ultimoDet(detDe('sat_est', c)), cur = medir('sat_est', c).cur;
-      det = d ? `<p class="ph-note">${esc(lblDe(d.k))}${d.prevK ? ' · la flecha compara con ' + esc(lblDe(d.prevK)) : ''}. La línea vertical marca el resultado global.</p>` +
-        hbars(d.rows, { max: 100, prev: d.prev && mapa(d.prev), ref: cur && cur.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 · promedio ${num(r.media, 2)} de 5\n${num(r.n)} respuestas` }) : '<div class="empty"><b>Sin detalle por aspecto hasta ' + st.anio + '</b>La primera medición por aspecto es de agosto – diciembre 2025.</div>';
+      det = d ? `<p class="ph-note">${esc(lblDe(d.k))}${d.prevK ? ' - la flecha compara con ' + esc(lblDe(d.prevK)) : ''}. La línea vertical marca el resultado global.</p>` +
+        hbars(d.rows, { max: 100, prev: d.prev && mapa(d.prev), ref: cur && cur.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 - promedio ${num(r.media, 2)} de 5\n${num(r.n)} respuestas` }) : '<div class="empty"><b>Sin detalle por aspecto hasta ' + st.anio + '</b>La primera medición por aspecto es de agosto – diciembre 2025.</div>';
     } else if (grupoDet === 'grad') {
       const d = ultimoDet(D.det.sat_grad[c]);
-      det = d ? `<p class="ph-note">Graduados consultados en ${esc(d.k)} · ${num(d.rows[0].n)} respuestas${d.rows[0].n < 10 ? ' (base pequeña)' : ''}. Escala de 1 a 7: se cuenta como satisfecho de 5 a 7.</p>` +
-        '<div class="hsub">La formación</div>' + hbars(d.rows.filter(r => r.g === 'formacion'), { max: 100, tip: r => `${r.a}\n${num(r.v, 1)} % satisfechos · promedio ${num(r.media, 2)} de 7` }) +
-        '<div class="hsub">El personal y los recursos de la universidad</div>' + hbars(d.rows.filter(r => r.g === 'recursos'), { max: 100, tip: r => `${r.a}\n${num(r.v, 1)} % satisfechos · promedio ${num(r.media, 2)} de 7` }) : '<div class="empty"><b>Sin encuestas a graduados hasta ' + st.anio + '</b></div>';
+      det = d ? `<p class="ph-note">Graduados consultados en ${esc(d.k)} - ${num(d.rows[0].n)} respuestas${d.rows[0].n < 10 ? ' (base pequeña)' : ''}. Escala de 1 a 7: se cuenta como satisfecho de 5 a 7.</p>` +
+        '<div class="hsub">La formación</div>' + hbars(d.rows.filter(r => r.g === 'formacion'), { max: 100, tip: r => `${r.a}\n${num(r.v, 1)} % satisfechos - promedio ${num(r.media, 2)} de 7` }) +
+        '<div class="hsub">El personal y los recursos de la universidad</div>' + hbars(d.rows.filter(r => r.g === 'recursos'), { max: 100, tip: r => `${r.a}\n${num(r.v, 1)} % satisfechos - promedio ${num(r.media, 2)} de 7` }) : '<div class="empty"><b>Sin encuestas a graduados hasta ' + st.anio + '</b></div>';
     } else {
       const d = ultimoDet(D.det.sat_doc[c]), cur = medir('sat_doc', c).cur;
-      det = d ? `<p class="ph-note">${esc(lblDe(d.k))} · ${num(cur.n)} docentes. La línea vertical marca el resultado global.</p>` +
-        hbars(d.rows, { max: 100, ref: cur && cur.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 · promedio ${num(r.media, 2)} de 5` }) : '<div class="empty"><b>Sin encuesta docente hasta ' + st.anio + '</b>La primera medición es de abril – julio 2026.</div>';
+      det = d ? `<p class="ph-note">${esc(lblDe(d.k))} - ${num(cur.n)} docentes. La línea vertical marca el resultado global.</p>` +
+        hbars(d.rows, { max: 100, ref: cur && cur.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 - promedio ${num(r.media, 2)} de 5` }) : '<div class="empty"><b>Sin encuesta docente hasta ' + st.anio + '</b>La primera medición es de abril – julio 2026.</div>';
     }
     const seg = [['est', 'Estudiantes'], ['grad', 'Graduados'], ['doc', 'Docentes']].map(([k, l]) => `<button type="button" class="segbtn ${grupoDet === k ? 'on' : ''}" data-grupo="${k}">${l}</button>`).join('');
     const notaEst = serie('sat_est', c).some(p => p.glob && p.a <= st.anio) ? 'El primer punto (abril – julio 2025) es una medición general, sin detalle por aspecto.' : '';
@@ -1525,8 +1530,8 @@
     const cur = medir('sat_est', st.car).cur, d = cur && (D.det.sat_gse[st.car] || {})[cur.p];
     const rows = d ? GSE_ORD.filter(g => d[g]).map(g => ({ a: GSE_NOM[g], gse: g, v: d[g].v, n: d[g].n })) : [];
     return panel('Satisfacción estudiantil por nivel socioeconómico', 'sat_est',
-      hbars(rows, { max: 100, color: COL[st.car], tip: r => `Nivel ${r.a.toLowerCase()}: ${num(r.v, 1)} % de valoraciones de 4 o 5\n${num(r.n)} estudiantes encuestados` }),
-      cur ? `${esc(cur.l)} · pulsa un nivel para filtrar el tablero` : '');
+      hbars(rows, { max: 100, color: COL[st.car], tip: r => `Nivel ${GSE_NOM[r.gse].toLowerCase()}: ${num(r.v, 1)} % de valoraciones de 4 o 5\n${num(r.n)} estudiantes encuestados` }),
+      cur ? `${esc(cur.l)} - pulsa un nivel para filtrar el tablero` : '');
   }
 
   /* ---------------- Vista 6 ---------------- */
@@ -1547,15 +1552,23 @@
     if (pe.cur && pe.prev) out.push(`La coautoría con estudiantes ${pe.cur.v >= pe.prev.v ? 'crece' : 'cae'} a ${B(fmt('pub_est', pe.cur.v))} de los artículos (${fmt('pub_est', pe.prev.v)} en ${esc(pe.prev.l.replace(' (parcial)', ''))}).`);
     return out;
   }
+  let cuTodos = true;
   function vInvest() {
     const c = st.car, ids = ['pub_total', 'doc_prod', 'pub_alto', 'pub_q12', 'pub_est'];
     const NIV = [['Científico (Scopus / WoS)', '#1c3247'], ['Regional (Latindex)', '#4597bf'], ['Divulgativo y memorias', '#f7964d']];
     const xs = serie('pub_total', c).filter(p => p.a <= st.anio).map(p => ({ p: p.p, l: p.l, a: p.a, parcial: p.parcial,
       segs: NIV.map(([k, col]) => ({ k, v: (D.det.pub_nivel[c][p.p] || {})[k] || 0, color: col })) }));
     const leg = '<div class="legend">' + NIV.map(([k, col]) => `<span><i class="box" style="background:${col}"></i>${esc(k)}</span>`).join('') + '</div>';
-    const cu = ultimoDet(D.det.pub_cuartil[c]);
-    const cuRows = cu ? ['Q1', 'Q2', 'Q3', 'Q4'].map((k, i) => ({ a: k + (i === 0 ? ' · mayor impacto' : i === 3 ? ' · menor impacto' : ''), v: cu.rows[k], color: ['#1c3247', '#335f7f', '#3c7aa0', '#4597bf'][i] })) : [];
-    const proy = medir('pub_proy', c).cur;
+    // Los artículos se suman entre años (cada uno cuenta en un solo año): «Hasta» acumula, «Solo» muestra el último año.
+    const cuKs = Object.keys(D.det.pub_cuartil[c] || {}).filter(dentroP).sort();
+    const cuSel = cuTodos ? cuKs : cuKs.slice(-1), cuUlt = cuKs[cuKs.length - 1];
+    const sumaAnios = id => serie(id, c).filter(p => cuSel.includes(p.p)).reduce((s, p) => s + (p.v || 0), 0);
+    const cuQ = q => cuSel.reduce((s, k) => s + (D.det.pub_cuartil[c][k][q] || 0), 0);
+    const cuRows = cuSel.length ? ['Q1', 'Q2', 'Q3', 'Q4'].map((k, i) => ({ a: k + (i === 0 ? ' - mayor impacto' : i === 3 ? ' - menor impacto' : ''), v: cuQ(k), color: ['#1c3247', '#335f7f', '#3c7aa0', '#4597bf'][i] })) : [];
+    const cuTot = cuRows.reduce((s, r) => s + r.v, 0), artTot = sumaAnios('pub_total'), proyTot = sumaAnios('pub_proy');
+    const enCurso = cuUlt == D.anioActual ? (cuSel.length > 1 ? ` (${cuUlt} en curso)` : ' (en curso)') : '';
+    const cuRango = cuSel.length > 1 ? `${cuSel[0]} – ${cuUlt}` : cuUlt;
+    const cuSeg = `<div class="segbtns"><button type="button" class="segbtn ${cuTodos ? 'on' : ''}" data-cu="1">Hasta ${cuUlt}</button><button type="button" class="segbtn ${!cuTodos ? 'on' : ''}" data-cu="0">Solo ${cuUlt}</button></div>`;
     return `<div class="kpis">${ids.map(id => kpi(id)).join('')}</div>` + lectura(insInvest()) +
       `<div class="grid2 wl">` +
       panel('Artículos publicados por año y nivel de la revista', 'pub_total', slot(el => columnChart(el, { xs, legend: leg })), 'Artículos únicos, aprobados por la universidad') +
@@ -1563,8 +1576,12 @@
       `</div><div class="grid3">` +
       panel('Revistas de impacto mundial', 'pub_alto', slot(el => lineChart(el, 'pub_alto', { h: 200 })), 'Porcentaje de artículos en Scopus o Web of Science') +
       panel('Coautoría con estudiantes', 'pub_est', slot(el => lineChart(el, 'pub_est', { h: 200 })), 'Porcentaje de artículos con al menos un estudiante coautor') +
-      panel('Cuartil de las revistas indexadas', 'pub_q12', cu ? hbars(cuRows, { fmt: v => num(v) + ' art.', tip: r => `${r.a}: ${num(r.v)} artículos en ${cu.k}` }) +
-        `<p class="ph-note" style="margin:12px 0 0">Año ${esc(cu.k)}${cu.k == D.anioActual ? ' (en curso)' : ''}. ${proy ? `${B(num(proy.v))} artículos del año provienen de proyectos de investigación.` : ''}</p>` : '', 'Solo los artículos con cuartil asignado') +
+      (cuSel.length ? `<div class="panel"><div class="ph"><h3>Cuartil de las revistas indexadas</h3>${info('pub_q12')}<span style="flex:1"></span>${cuSeg}</div>` +
+        `<p class="ph-note">Solo los artículos con cuartil asignado - ${cuSel.length > 1 ? 'años' : 'año'} ${esc(cuRango)}${enCurso}</p>` +
+        hbars(cuRows, { fmt: v => num(v) + ' art.', tip: r => `${r.a}: ${num(r.v)} artículos en ${cuRango}` }) +
+        `<p class="ph-note" style="margin:12px 0 0">${B(num(artTot))} artículos publicados${cuSel.length > 1 ? ` entre ${cuSel[0]} y ${cuUlt}` : ` en ${cuUlt}`}; ${B(num(cuTot))} en revistas con cuartil.` +
+        `${proyTot ? ` ${num(proyTot)} provienen de proyectos de investigación.` : ''}</p></div>`
+        : panel('Cuartil de las revistas indexadas', 'pub_q12', '', 'Solo los artículos con cuartil asignado')) +
       `</div>` + tabla(ids.concat('pub_proy'));
   }
 
@@ -1573,7 +1590,7 @@
     const out = [], c = st.car;
     const p = medir('vin_proy', c).cur, b = medir('vin_benef', c).cur, a = medir('vin_avance', c).cur, u = medir('vin_culm', c).cur;
     if (p) out.push(`En ${esc(p.l.replace(' (parcial)', ''))}${p.parcial ? ', con el año todavía en curso,' : ''} iniciaron ${B(num(p.v) + ' proyectos')} de vinculación` + (b ? `, que se propusieron atender a ${B(num(b.v) + ' personas')} de forma directa.` : '.'));
-    if (a) out.push(`Los proyectos que terminaron reportan, en promedio, ${B(fmt('vin_avance', a.v))} de cumplimiento de lo planificado (${esc(baseTxt('vin_avance', a))}, iniciados en ${esc(a.l)}).`);
+    if (a) out.push(`Los proyectos que terminaron reportan, en promedio, ${B(fmt('vin_avance', a.v))} de avance sobre lo que planificaron (${esc(baseTxt('vin_avance', a))}, iniciados en ${esc(a.l)}).`);
     if (u) out.push(`${B(fmt('vin_culm', u.v))} de los estudiantes que cerraron su participación la culminó.`);
     return out;
   }
@@ -1584,7 +1601,7 @@
     const xsB = serie('vin_benef', c).filter(p => p.a <= st.anio && p.a >= 2021).map(p => ({ p: p.p, l: p.l, a: p.a, segs: [{ k: 'Beneficiarios previstos', v: p.v, color: COL[c] }] }));
     const filas = (D.det.vin_proyectos[c] || []).filter(f => f.a <= st.anio && (vinTodos || f.a === st.anio));
     const carN = { ENF: 'Enfermería', NUT: 'Nutrición', 'ENF+NUT': 'Ambas' };
-    const tablaP = filas.length ? `<div class="tbl-wrap" style="max-height:420px;overflow-y:auto"><table class="res"><thead><tr><th>Proyecto</th>${c === 'FACS' ? '<th>Carrera</th>' : ''}<th class="n">Inicio</th><th>Estado</th><th>Cumplimiento reportado</th><th class="n">Beneficiarios previstos</th><th class="n">Estudiantes</th></tr></thead><tbody>` +
+    const tablaP = filas.length ? `<div class="tbl-wrap" style="max-height:420px;overflow-y:auto"><table class="res"><thead><tr><th>Proyecto</th>${c === 'FACS' ? '<th>Carrera</th>' : ''}<th class="n">Inicio</th><th>Estado</th><th>Avance reportado</th><th class="n">Beneficiarios previstos</th><th class="n">Estudiantes</th></tr></thead><tbody>` +
       filas.map(f => `<tr class="${f.a === st.anio ? 'hl' : ''}"><td style="min-width:260px">${esc(f.nom)}</td>${c === 'FACS' ? `<td class="per">${esc(carN[f.car])}</td>` : ''}<td class="n">${f.a}</td>` +
         `<td><span class="pill ${/ejecuci/i.test(f.estado) ? 'ej' : 'fin'}">${/ejecuci/i.test(f.estado) ? 'En ejecución' : esc(f.estado)}</span></td>` +
         `<td>${f.av == null ? '<span class="per">Sin informe aprobado</span>' : `<span class="mini-bar"><i style="width:${f.av}%"></i></span>${num(f.av, 0)} %`}</td>` +
@@ -1596,7 +1613,7 @@
       panel('Proyectos ejecutados por año de inicio', 'vin_proy', slot(el => columnChart(el, { xs: xsP, h: 205 }))) +
       panel('Beneficiarios directos previstos', 'vin_benef', slot(el => columnChart(el, { xs: xsB, h: 205 }))) +
       `</div><div class="panel"><div class="ph"><h3>Proyectos de vinculación</h3><span style="flex:1"></span>${seg}</div>` +
-      `<p class="ph-note">${num(filas.length)} proyectos aprobados. El cumplimiento es el avance que el propio proyecto reporta en sus informes aprobados.</p>${tablaP}</div>` +
+      `<p class="ph-note">${num(filas.length)} proyectos aprobados. El avance es el que el propio proyecto reporta en sus informes aprobados, frente a lo que planificó.</p>${tablaP}</div>` +
       tabla(ids.concat('vin_est'));
   }
 
@@ -1613,7 +1630,7 @@
       (tc.prev ? ` (${fmt('tut_cob', tc.prev.v)} el semestre anterior).` : '.'));
     if (c === 'FACS') {
       const e = medir('tut_cob', 'ENF').cur, n = medir('tut_cob', 'NUT').cur;
-      if (e && n && Math.abs(e.v - n.v) >= 10) out.push(`La cobertura de tutorías es desigual entre carreras: ${B('Enfermería ' + fmt('tut_cob', e.v))} frente a ${B('Nutrición ' + fmt('tut_cob', n.v))}.`);
+      if (e && n && e.n >= 10 && n.n >= 10 && Math.abs(e.v - n.v) >= 10) out.push(`La cobertura de tutorías es desigual entre carreras: ${B('Enfermería ' + fmt('tut_cob', e.v))} frente a ${B('Nutrición ' + fmt('tut_cob', n.v))}.`);
     }
     const te = medir('tut_ejec', c);
     if (te.cur && te.pts.length > 2) {
@@ -1643,14 +1660,16 @@
       panel('Cobertura de tutorías académicas', 'tut_cob', slot(el => lineChart(el, 'tut_cob'))) +
       panel('Estudiantes con beca o ayuda', 'beca_cob', slot(el => lineChart(el, 'beca_cob'))) +
       `</div><div class="grid2">` +
-      panel('¿A quién llegan las becas?', 'beca_cob', hbars(gRows, { max: Math.max(25, ...gRows.map(r => r.v)), color: COL[c], tip: r => `Nivel ${r.a.toLowerCase()}: ${num(r.v, 1)} % con beca\n${num(r.n)} matriculados en el grupo` }),
-        bc ? `Porcentaje con beca dentro de cada nivel · ${esc(bc.l)} · pulsa un nivel para filtrar` : '') +
-      panel('Tipo de beca', 'beca_cob', hbars(tRows, { fmt: v => num(v) + ' est.', vacio: 'Menos de 5', color: '#4597bf', tip: r => r.v == null ? `${r.a}: menos de 5 estudiantes` : `${r.a}: ${num(r.v)} estudiantes` }), bc ? `Estudiantes beneficiarios · ${esc(bc.l)}` : '') +
+      panel('¿A quién llegan las becas?', 'beca_cob', hbars(gRows, { max: Math.max(25, ...gRows.map(r => r.v)), color: COL[c], tip: r => `Nivel ${GSE_NOM[r.gse].toLowerCase()}: ${num(r.v, 1)} % con beca\n${num(r.n)} matriculados en el grupo` }),
+        bc ? `Porcentaje con beca dentro de cada nivel - ${esc(bc.l)} - pulsa un nivel para filtrar` : '') +
+      panel('Tipo de beca', 'beca_cob', hbars(tRows, { fmt: v => num(v) + ' est.', vacio: '1 a 4 est.', color: '#4597bf', tip: r => r.v == null ? `${r.a}: entre 1 y 4 estudiantes (no se publica el número exacto)` : `${r.a}: ${num(r.v)} estudiantes` }) +
+        (tRows.some(r => r.v == null) ? `<p class="ph-note" style="margin:12px 0 0">${esc(tRows.filter(r => r.v == null).map(r => r.a).join(', '))}: entre 1 y 4 estudiantes. No se publica el número exacto para proteger su identidad.</p>` : ''),
+        bc ? `Estudiantes beneficiarios - ${esc(bc.l)}` : '') +
       `</div><div class="grid2">` +
       panel('Cobertura de tutorías por nivel', 'tut_cob', hbars(st.niv ? nRowsSel : nRows, { max: 100, color: COL[c], tip: r => `${r.a}: ${num(r.v, 1)} % asistió a tutorías\n${num(r.n)} matriculados en el nivel` }),
-        tcur ? `${esc(tcur.l)} · pulsa un nivel para filtrar el tablero` : '') +
-      panel('Satisfacción con cada servicio', 'sat_serv', ss ? hbars(ss.rows, { max: 100, prev: ss.prev && mapa(ss.prev), ref: sc && sc.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 · promedio ${num(r.media, 2)} de 5` }) : '',
-        ss ? `${esc(lblDe(ss.k))}${ss.prevK ? ' · la flecha compara con ' + esc(lblDe(ss.prevK)) : ''}` : `Sin medición hasta ${st.anio}`) +
+        tcur ? `${esc(tcur.l)} - pulsa un nivel para filtrar el tablero` : '') +
+      panel('Satisfacción con cada servicio', 'sat_serv', ss ? hbars(ss.rows, { max: 100, prev: ss.prev && mapa(ss.prev), ref: sc && sc.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 - promedio ${num(r.media, 2)} de 5` }) : '',
+        ss ? `${esc(lblDe(ss.k))}${ss.prevK ? ' - la flecha compara con ' + esc(lblDe(ss.prevK)) : ''}` : `Sin medición hasta ${st.anio}`) +
       `</div>` + tabla(ids);
   }
 
@@ -1682,7 +1701,7 @@
     if (st.gf && enGrad()) chips.push(`<button type="button" class="chip" data-quitar="gf">${esc(gfNom(st.gf))}<span class="x" aria-label="Quitar">×</span></button>`);
     if (st.tf && enTray()) chips.push(`<button type="button" class="chip" data-quitar="tf">${esc(rfNom(st.tf))}<span class="x" aria-label="Quitar">×</span></button>`);
     if (enPerf()) Object.entries(st.pc).forEach(([d, v]) => chips.push(`<button type="button" class="chip" data-quitar="pc:${esc(d)}">${esc(pcNom(d, v))}<span class="x" aria-label="Quitar">×</span></button>`));
-    const head = `<div class="vhead"><div class="ic"><svg viewBox="0 0 24 24">${IC[v.id]}</svg></div><div><h2>${v.num ? v.num + '. ' : ''}${esc(v.nom)}</h2><p>${esc(v.obj)} · ${esc(NOM[st.car])}, ${esc(etiquetaCorte())}</p></div>` +
+    const head = `<div class="vhead"><div class="ic"><svg viewBox="0 0 24 24">${IC[v.id]}</svg></div><div><h2>${v.num ? v.num + '. ' : ''}${esc(v.nom)}</h2><p>${esc(v.obj)} - ${esc(NOM[st.car])}, ${esc(etiquetaCorte())}</p></div>` +
       `<div class="chips">${chips.join('')}${chips.length ? '<button type="button" class="chip-limpiar" data-quitar="todo">Quitar filtros</button>' : '<span class="chip-ayuda">Pulsa un punto, una barra o una carrera en los gráficos para filtrar todo el tablero</span>'}</div></div>`;
     pend = [];
     root.innerHTML = head + RENDER[st.vista]();
@@ -1823,6 +1842,8 @@
     if (gr) { grupoDet = gr.dataset.grupo; render(false); return; }
     const vi = e.target.closest('[data-vin]');
     if (vi) { vinTodos = vi.dataset.vin === '1'; render(false); return; }
+    const cq = e.target.closest('[data-cu]');
+    if (cq) { cuTodos = cq.dataset.cu === '1'; render(false); return; }
     const ca = e.target.closest('.legend [data-car]');
     if (ca) { filtrarCarrera(ca.dataset.car); return; }
     const gs = e.target.closest('[data-gse]');
