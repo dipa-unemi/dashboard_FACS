@@ -50,8 +50,6 @@
   const GSE_DET = new Set(['sat_est', 'sat_serv', 'beca_tipo']);
   const GSE_NOM = { 'BAJO': 'Bajo', 'MEDIO BAJO': 'Medio bajo', 'MEDIO TÍPICO': 'Medio típico', 'MEDIO ALTO': 'Medio alto', 'ALTO': 'Alto' };
   const GSE_ORD = Object.keys(GSE_NOM);
-  // El nivel alto se publica aunque tenga pocos estudiantes: la etiqueta dice cuántos son.
-  const gseLbl = (g, n) => GSE_NOM[g] + (n < 10 ? ` · ${n === 1 ? '1 estudiante' : n + ' estudiantes'}` : '');
   /* Nivel de la carrera: misma lógica que el nivel socioeconómico. Se usa uno a la vez. */
   const NIV_ORD = [...new Set(Object.keys(D.ind.tut_cob).filter(k => /\|N\d$/.test(k)).map(k => k.split('|')[1]))].sort();
   const ORDINAL = { 1: '1.er', 2: '2.º', 3: '3.er', 4: '4.º', 5: '5.º', 6: '6.º', 7: '7.º', 8: '8.º', 9: '9.º' };
@@ -513,7 +511,7 @@
 
   function panelGse() {
     const cur = medir('sat_est', st.car).cur, d = cur && (D.det.sat_gse[st.car] || {})[cur.p];
-    const rows = d ? GSE_ORD.filter(g => d[g]).map(g => ({ a: gseLbl(g, d[g].n), gse: g, v: d[g].v, n: d[g].n })) : [];
+    const rows = d ? GSE_ORD.filter(g => d[g]).map(g => ({ a: GSE_NOM[g], gse: g, v: d[g].v, n: d[g].n })) : [];
     return panel('Satisfacción estudiantil por nivel socioeconómico', 'sat_est',
       hbars(rows, { max: 100, color: COL[st.car], tip: r => `Nivel ${GSE_NOM[r.gse].toLowerCase()}: ${num(r.v, 1)} % de valoraciones de 4 o 5\n${num(r.n)} estudiantes encuestados` }),
       cur ? `${esc(cur.l)} · pulsa un nivel para filtrar el tablero` : '');
@@ -631,7 +629,7 @@
     const bc = medir('beca_cob', c).cur;
     const g = bc ? ultimoDet(D.det.beca_gse[c], k => k === bc.p) : null;
     const ORD = ['BAJO', 'MEDIO BAJO', 'MEDIO TÍPICO', 'MEDIO ALTO', 'ALTO'];
-    const gRows = g ? ORD.filter(k => g.rows[k]).map(k => ({ a: gseLbl(k, g.rows[k].n), gse: k, v: g.rows[k].v, n: g.rows[k].n })) : [];
+    const gRows = g ? ORD.filter(k => g.rows[k]).map(k => ({ a: GSE_NOM[k], gse: k, v: g.rows[k].v, n: g.rows[k].n })) : [];
     const tp = bc ? (detDe('beca_tipo', c) || {})[bc.p] : null;
     const tRows = tp ? Object.entries(tp).map(([k, v]) => ({ a: k[0] + k.slice(1).toLowerCase().replace(/\s*\(desde 2do nivel\)/, ' (desde 2.º nivel)'), v })).sort((a, b) => (b.v || 0) - (a.v || 0)) : [];
     const ss = ultimoDet(detDe('sat_serv', c)), sc = medir('sat_serv', c).cur;
