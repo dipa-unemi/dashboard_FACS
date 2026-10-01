@@ -44,12 +44,17 @@
   /* ------------------------------------------------------------ estado */
   const anios = [];
   for (let a = 2021; a <= D.anioActual; a++) anios.push(a);
-  const st = { car: 'FACS', anio: D.anioActual, vista: 'inicio', foco: null, sem: null, gse: null };
+  const st = { car: 'FACS', anio: D.anioActual, vista: 'inicio', foco: null, sem: null, gse: null, niv: null };
   /* Indicadores de estudiantes: los únicos que se pueden desglosar por nivel socioeconómico. */
   const GSE_IND = new Set(['sat_est', 'sat_serv', 'tut_cob', 'tut_ejec', 'tut_int', 'beca_cob']);
   const GSE_DET = new Set(['sat_est', 'sat_serv', 'beca_tipo']);
   const GSE_NOM = { 'BAJO': 'Bajo', 'MEDIO BAJO': 'Medio bajo', 'MEDIO TÍPICO': 'Medio típico', 'MEDIO ALTO': 'Medio alto', 'ALTO': 'Alto' };
   const GSE_ORD = Object.keys(GSE_NOM);
+  /* Nivel de la carrera: misma lógica que el nivel socioeconómico. Se usa uno a la vez. */
+  const NIV_ORD = [...new Set(Object.keys(D.ind.tut_cob).filter(k => /\|N\d$/.test(k)).map(k => k.split('|')[1]))].sort();
+  const ORDINAL = { 1: '1.er', 2: '2.º', 3: '3.er', 4: '4.º', 5: '5.º', 6: '6.º', 7: '7.º', 8: '8.º', 9: '9.º' };
+  const nivNom = n => ORDINAL[n.slice(1)] + ' nivel';
+  const dimAct = () => st.gse || st.niv;
 
   /* ------------------------------------------------------------ formato */
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -74,9 +79,9 @@
   function ordenP(p) { if (/^\d{4}$/.test(p)) return +p * 10; const [s, a] = p.split('-'); return +a * 10 + +s[0]; }
 
   /* ------------------------------------------------------------ datos */
-  const conGse = (id, car) => st.gse && GSE_IND.has(id) ? car + '|' + st.gse : car;
+  const conGse = (id, car) => dimAct() && GSE_IND.has(id) ? car + '|' + dimAct() : car;
   const serie = (id, car) => (D.ind[id] && D.ind[id][conGse(id, car)]) || [];
-  const detDe = (nombre, car) => (D.det[nombre] || {})[st.gse && GSE_DET.has(nombre) ? car + '|' + st.gse : car];
+  const detDe = (nombre, car) => (D.det[nombre] || {})[dimAct() && GSE_DET.has(nombre) ? car + '|' + dimAct() : car];
   const esAnual = p => /^\d{4}$/.test(p);
   const anioCorte = () => st.sem ? +st.sem.slice(-4) : st.anio;
   /* Corte temporal: hasta el semestre pulsado, o hasta el año elegido. */
@@ -352,9 +357,10 @@
         d = `<span class="trend d ${cls}" style="margin-left:6px">${Math.abs(dd) < 1 ? '→' : dd > 0 ? '↑' : '↓'} ${num(Math.abs(dd), 1)} pp</span>`;
       }
       let t = (o.tip ? o.tip(r) : '') || `${r.a}: ${o.fmt ? o.fmt(r.v) : num(r.v, 1) + ' %'}`;
-      const pulsable = r.gse ? ` data-gse="${esc(r.gse)}"` : '';
-      if (r.gse) t += st.gse === r.gse ? '\nClic: quitar este filtro' : '\nClic: filtrar el tablero a este nivel';
-      const clase = 'hrow' + (r.gse && st.gse ? (st.gse === r.gse ? ' sel' : ' mut') : '');
+      const pulsable = r.gse ? ` data-gse="${esc(r.gse)}"` : r.niv ? ` data-niv="${esc(r.niv)}"` : '';
+      const actual = r.gse ? st.gse : r.niv ? st.niv : null, propio = r.gse || r.niv;
+      if (propio) t += actual === propio ? '\nClic: quitar este filtro' : '\nClic: filtrar el tablero a este grupo';
+      const clase = 'hrow' + (propio && actual ? (actual === propio ? ' sel' : ' mut') : '');
       const valor = r.v == null ? (o.vacio || '—') : (o.fmt ? o.fmt(r.v) : num(r.v, 1) + ' %');
       return `<div class="${clase}"${pulsable} data-tip="${esc(t)}"><span class="hl">${esc(r.a)}</span>` +
         `<span class="hv">${esc(valor)}${d}</span>` +
@@ -379,11 +385,11 @@
     const tag = o.link ? 'button type="button"' : 'div';
     const attrs = o.link ? ` data-go="${c.vista}" data-foco="${id}"` : '';
     const lbl = `<div class="top"><span class="lbl">${c.tipo ? `<span style="color:var(--acento)">${esc(c.tipo)} · </span>` : ''}${esc(c.nombre)}</span>${info(id)}</div>`;
-    const sinGse = st.gse && !GSE_IND.has(id);
+    const sinGse = dimAct() && !GSE_IND.has(id);
     const cls = 'kpi' + (sinGse ? ' nogse' : '');
     if (!cur) return `<${tag} class="${cls} na" id="k-${id}"${attrs}>${lbl}<div class="val">Sin medición</div><div class="per">No hay resultados ${esc(etiquetaCorte())}</div></${tag.split(' ')[0]}>`;
     const t = tendencia(id, cur, m.prev), e = estado(id, st.car, cur.v);
-    const base = sinGse ? 'Sin desglose por nivel socioeconómico: muestra a toda la población' : baseTxt(id, cur);
+    const base = sinGse ? `Sin desglose por ${st.gse ? 'nivel socioeconómico' : 'nivel de la carrera'}: muestra a toda la población` : baseTxt(id, cur);
     return `<${tag} class="${cls}" id="k-${id}"${attrs}>${lbl}` +
       `<div class="mid"><div><div class="val">${valHTML(id, cur.v)}</div><div class="per">${esc(cur.l)}${m.prev ? ' · antes ' + esc(fmt(id, m.prev.v)) : ''}</div></div>${spark(id)}</div>` +
       `<div class="base">${esc(base)}</div>` +
@@ -415,7 +421,7 @@
     return `<div class="lectura"><h3><svg viewBox="0 0 24 24">${IC.idea}</svg>${esc(titulo || 'Lo que dicen los datos')}</h3><ul>${items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
   }
   const B = s => `<b>${esc(s)}</b>`;
-  const deGrupo = () => st.gse ? ` de nivel socioeconómico ${GSE_NOM[st.gse].toLowerCase()}` : '';
+  const deGrupo = () => st.gse ? ` de nivel socioeconómico ${GSE_NOM[st.gse].toLowerCase()}` : st.niv ? ` de ${nivNom(st.niv)}` : '';
   const q = s => `«${esc(s)}»`;
   function panel(titulo, id, cuerpo, nota) {
     return `<div class="panel"><div class="ph"><h3>${esc(titulo)}</h3>${id ? info(id) : ''}</div>${nota ? `<p class="ph-note">${nota}</p>` : '<div style="height:8px"></div>'}${cuerpo}</div>`;
@@ -582,7 +588,7 @@
   function insApoyo() {
     const out = [], c = st.car;
     const bc = medir('beca_cob', c).cur, g = ultimoDet(D.det.beca_gse[c], k => bc && k === bc.p);
-    if (bc && g && g.rows.BAJO && !st.gse) {
+    if (bc && g && g.rows.BAJO && !dimAct()) {
       const v = g.rows.BAJO.v;
       out.push(`Las becas llegan al ${B(num(v, 1) + ' %')} de los estudiantes de nivel socioeconómico bajo: ${B(num(Math.round(10 - v / 10)) + ' de cada 10')} no recibe ayuda (${esc(bc.l)}).`);
     } else if (bc) out.push(`${B(fmt('beca_cob', bc.v))} de los estudiantes${deGrupo()} recibe una beca o ayuda en ${esc(bc.l)}.`);
@@ -599,7 +605,7 @@
       if (mx.v - te.cur.v >= 8) out.push(`Se realiza el ${B(fmt('tut_ejec', te.cur.v))} de las tutorías agendadas, frente al ${fmt('tut_ejec', mx.v)} de ${esc(mx.l)}: las cancelaciones van en aumento.`);
     }
     const ss = ultimoDet(detDe('sat_serv', c));
-    if (ss && ss.rows.length) { const lo = ss.rows[ss.rows.length - 1]; out.push(`El servicio peor valorado por los estudiantes es ${q(lo.a)} (${num(lo.v, 1)} %).`); }
+    if (ss && ss.rows.length) { const lo = ss.rows[ss.rows.length - 1]; out.push(`El servicio peor valorado por los estudiantes${deGrupo()} es ${q(lo.a)} (${num(lo.v, 1)} %).`); }
     return out;
   }
   function vApoyo() {
@@ -611,14 +617,22 @@
     const tp = bc ? (detDe('beca_tipo', c) || {})[bc.p] : null;
     const tRows = tp ? Object.entries(tp).map(([k, v]) => ({ a: k[0] + k.slice(1).toLowerCase().replace(/\s*\(desde 2do nivel\)/, ' (desde 2.º nivel)'), v })).sort((a, b) => (b.v || 0) - (a.v || 0)) : [];
     const ss = ultimoDet(detDe('sat_serv', c)), sc = medir('sat_serv', c).cur;
+    const tcur = medir('tut_cob', c).cur;
+    const tn = st.niv ? null : (tcur && (D.det.tut_niv[c] || {})[tcur.p]);
+    const nRows = tn ? NIV_ORD.filter(k => tn[k]).map(k => ({ a: nivNom(k), niv: k, v: tn[k].v, n: tn[k].n })) : [];
+    const tnSel = st.niv ? ultimoDet(D.det.tut_niv[c]) : null;
+    const nRowsSel = tnSel ? NIV_ORD.filter(k => tnSel.rows[k]).map(k => ({ a: nivNom(k), niv: k, v: tnSel.rows[k].v, n: tnSel.rows[k].n })) : [];
     return `<div class="kpis">${ids.map(id => kpi(id)).join('')}</div>` + lectura(insApoyo()) +
       `<div class="grid2">` +
       panel('Cobertura de tutorías académicas', 'tut_cob', slot(el => lineChart(el, 'tut_cob'))) +
       panel('Estudiantes con beca o ayuda', 'beca_cob', slot(el => lineChart(el, 'beca_cob'))) +
-      `</div><div class="grid3">` +
+      `</div><div class="grid2">` +
       panel('¿A quién llegan las becas?', 'beca_cob', hbars(gRows, { max: Math.max(25, ...gRows.map(r => r.v)), color: COL[c], tip: r => `Nivel ${r.a.toLowerCase()}: ${num(r.v, 1)} % con beca\n${num(r.n)} matriculados en el grupo` }),
         bc ? `Porcentaje con beca dentro de cada nivel · ${esc(bc.l)} · pulsa un nivel para filtrar` : '') +
       panel('Tipo de beca', 'beca_cob', hbars(tRows, { fmt: v => num(v) + ' est.', vacio: 'Menos de 5', color: '#4597bf', tip: r => r.v == null ? `${r.a}: menos de 5 estudiantes` : `${r.a}: ${num(r.v)} estudiantes` }), bc ? `Estudiantes beneficiarios · ${esc(bc.l)}` : '') +
+      `</div><div class="grid2">` +
+      panel('Cobertura de tutorías por nivel', 'tut_cob', hbars(st.niv ? nRowsSel : nRows, { max: 100, color: COL[c], tip: r => `${r.a}: ${num(r.v, 1)} % asistió a tutorías\n${num(r.n)} matriculados en el nivel` }),
+        tcur ? `${esc(tcur.l)} · pulsa un nivel para filtrar el tablero` : '') +
       panel('Satisfacción con cada servicio', 'sat_serv', ss ? hbars(ss.rows, { max: 100, prev: ss.prev && mapa(ss.prev), ref: sc && sc.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 · promedio ${num(r.media, 2)} de 5` }) : '',
         ss ? `${esc(lblDe(ss.k))}${ss.prevK ? ' · la flecha compara con ' + esc(lblDe(ss.prevK)) : ''}` : `Sin medición hasta ${st.anio}`) +
       `</div>` + tabla(ids);
@@ -639,6 +653,7 @@
     const chips = [];
     if (st.sem) chips.push(`<button type="button" class="chip" data-quitar="sem">Periodo: ${esc(lblDe(st.sem))}<span class="x" aria-label="Quitar">×</span></button>`);
     if (st.gse) chips.push(`<button type="button" class="chip" data-quitar="gse">Nivel socioeconómico: ${esc(GSE_NOM[st.gse])}<span class="x" aria-label="Quitar">×</span></button>`);
+    if (st.niv) chips.push(`<button type="button" class="chip" data-quitar="niv">${esc(nivNom(st.niv))}<span class="x" aria-label="Quitar">×</span></button>`);
     const head = `<div class="vhead"><div class="ic"><svg viewBox="0 0 24 24">${IC[v.id]}</svg></div><div><h2>${v.num ? v.num + '. ' : ''}${esc(v.nom)}</h2><p>${esc(v.obj)} · ${esc(NOM[st.car])}, ${esc(etiquetaCorte())}</p></div>` +
       `<div class="chips">${chips.join('')}${chips.length ? '<button type="button" class="chip-limpiar" data-quitar="todo">Quitar filtros</button>' : '<span class="chip-ayuda">Pulsa un punto, una barra o una carrera en los gráficos para filtrar todo el tablero</span>'}</div></div>`;
     pend = [];
@@ -649,7 +664,7 @@
       if (k) { k.classList.add('flash'); if (scroll) k.scrollIntoView({ block: 'center' }); }
     } else if (scroll) window.scrollTo(0, 0);
     const h = '#' + st.vista + (st.foco ? '/' + st.foco : '') + `?c=${st.car}&a=${st.anio}` +
-      (st.sem ? '&s=' + st.sem : '') + (st.gse ? '&g=' + encodeURIComponent(st.gse) : '');
+      (st.sem ? '&s=' + st.sem : '') + (st.gse ? '&g=' + encodeURIComponent(st.gse) : '') + (st.niv ? '&n=' + st.niv : '');
     if (location.hash !== h) history.replaceState(null, '', h);
   }
   function leerHash() {
@@ -663,6 +678,7 @@
     st.sem = D.periodos.some(x => x.p === qs.get('s')) ? qs.get('s') : null;
     if (st.sem) st.anio = +st.sem.slice(-4);
     st.gse = GSE_NOM[qs.get('g')] ? qs.get('g') : null;
+    st.niv = !st.gse && NIV_ORD.includes(qs.get('n')) ? qs.get('n') : null;
   }
 
   /* ---------- filtro cruzado ---------- */
@@ -673,13 +689,16 @@
     fA.value = st.anio; render(false);
   }
   function filtrarCarrera(c) { st.car = st.car === c && c !== 'FACS' ? 'FACS' : c; fC.value = st.car; render(false); }
-  function filtrarGse(g) { st.gse = st.gse === g ? null : g; render(false); }
+  function filtrarGse(g) { st.gse = st.gse === g ? null : g; if (st.gse) st.niv = null; fN.value = st.niv || ''; render(false); }
+  function filtrarNivel(n) { st.niv = st.niv === n ? null : n; if (st.niv) st.gse = null; fN.value = st.niv || ''; render(false); }
 
   /* filtros */
-  const fC = document.getElementById('fCarrera'), fA = document.getElementById('fAnio');
+  const fC = document.getElementById('fCarrera'), fA = document.getElementById('fAnio'), fN = document.getElementById('fNivel');
+  fN.innerHTML = '<option value="">Todos</option>' + NIV_ORD.map(n => `<option value="${n}">${nivNom(n)}</option>`).join('');
   fA.innerHTML = anios.slice().reverse().map(a => `<option value="${a}">${a}</option>`).join('');
   leerHash();
-  fC.value = st.car; fA.value = st.anio;
+  fC.value = st.car; fA.value = st.anio; fN.value = st.niv || '';
+  fN.addEventListener('change', () => { st.niv = fN.value || null; if (st.niv) st.gse = null; render(false); });
   fC.addEventListener('change', () => { st.car = fC.value; render(false); });
   fA.addEventListener('change', () => { st.anio = +fA.value; st.sem = null; render(false); });
 
@@ -694,11 +713,15 @@
     if (ca) { filtrarCarrera(ca.dataset.car); return; }
     const gs = e.target.closest('[data-gse]');
     if (gs) { filtrarGse(gs.dataset.gse); return; }
+    const nv = e.target.closest('[data-niv]');
+    if (nv) { filtrarNivel(nv.dataset.niv); return; }
     const qu = e.target.closest('[data-quitar]');
     if (qu) {
       const k = qu.dataset.quitar;
       if (k === 'sem' || k === 'todo') st.sem = null;
       if (k === 'gse' || k === 'todo') st.gse = null;
+      if (k === 'niv' || k === 'todo') st.niv = null;
+      fN.value = st.niv || '';
       render(false);
     }
   });
@@ -706,6 +729,6 @@
   window.addEventListener('resize', () => {  // los gráficos se dibujan al ancho real de su panel
     clearTimeout(rz); rz = setTimeout(() => { if (Math.abs(innerWidth - anchoPrevio) > 40) { anchoPrevio = innerWidth; render(false); } }, 200);
   });
-  window.addEventListener('hashchange', () => { leerHash(); fC.value = st.car; fA.value = st.anio; render(true); });
+  window.addEventListener('hashchange', () => { leerHash(); fC.value = st.car; fA.value = st.anio; fN.value = st.niv || ''; render(true); });
   render(false);
 })();

@@ -20,7 +20,8 @@ medición anterior, los gráficos históricos y una tabla de resultados del peri
 
 ## Cómo se usa
 
-- **Filtros superiores:** carrera y periodo.
+- **Filtros superiores:** carrera, nivel (1.er a 9.º) y periodo. El nivel aplica a los
+  indicadores de estudiantes: satisfacción, tutorías y becas.
 - **Filtro cruzado:** al pulsar un punto o una barra, todo el tablero pasa a ese
   periodo; al pulsar una carrera en la leyenda, pasa a esa carrera; al pulsar un
   nivel socioeconómico, los indicadores de estudiantes se recalculan para ese grupo.

@@ -94,7 +94,7 @@ def leer(nombre, **kw):
 # ------------------------------------------------------------------ fuentes
 print("Leyendo extractos desde", DATA)
 beca = leer("Result_beca.xlsx")
-est = leer("Result_estudiante.xlsx", usecols=["carrera_estudiante", "inscripcion_id", "periodo",
+est = leer("Result_estudiante.xlsx", usecols=["carrera_estudiante", "inscripcion_id", "periodo", "nivel",
                                               "periodo_codigo", "grupo_socioeconomico"])
 tut = leer("Result_tutorias.xlsx")
 doc = leer("Result_docente.xlsx", usecols=["carrera_asignatura", "periodo", "periodo_codigo", "docente_id"])
@@ -469,35 +469,65 @@ gse_de = (matr.drop_duplicates(["cod", "inscripcion_id"])
           .set_index(["cod", "inscripcion_id"]).grupo_socioeconomico.to_dict())
 
 
-def con_gse(df):
-    return df.assign(gse=[gse_de.get(x) for x in zip(df.cod, df.inscripcion_id)])
+
+# Nivel de la carrera (1.er a 9.º) de cada estudiante en cada periodo: el nivel
+# donde cursa la mayoría de sus materias (empate: el más alto). Coincide en el
+# 97 % de los casos con el nivel oficial de la matrícula.
+def _nivel_num(t):
+    return int("".join(ch for ch in t if ch.isdigit()))
 
 
-sest_g, serv_g, tut_g, beca_g = (con_gse(x) for x in (sest_d, serv, tut, beca))
-MATRICULA_TODA = MATRICULA
-for g in GSE:
-    MATRICULA = {kc: {i for i in s if gse_de.get((kc[1], i)) == g} for kc, s in MATRICULA_TODA.items()}
-    partes = {"sat_est": serie_satisf(sest_g[sest_g.gse == g], 4),
-              "sat_serv": serie_satisf(serv_g[serv_g.gse == g], 4)}
-    _r, _d = bloque_apoyo(tut_g[tut_g.gse == g], beca_g[beca_g.gse == g])
-    partes.update(_r)
-    for k, porper in _d["beca_tipo"].items():
-        detalle["beca_tipo"][f"{k}|{g}"] = porper
-    dets = {"sat_est": detalle_aspectos(sest_g[sest_g.gse == g], 4),
-            "sat_serv": detalle_aspectos(serv_g[serv_g.gse == g], 4)}
-    for clave, porcar in partes.items():
-        for k, s in porcar.items():
-            for p in s:
-                base = p.get("n")
-                if base is None or base < MIN_CELDA:
-                    for campo in ("v", "n", "num", "cob", "media", "resp"):
-                        p.pop(campo, None)
-                    p["v"] = None
-            ind[clave][f"{k}|{g}"] = s
-    for clave, porcar in dets.items():
-        for k, porper in porcar.items():
-            detalle[clave][f"{k}|{g}"] = {c: [r for r in filas if r["n"] >= MIN_CELDA] for c, filas in porper.items()}
-MATRICULA = MATRICULA_TODA
+matr["niv"] = matr.nivel.map(_nivel_num)
+_cnt = matr.groupby(["cod", "inscripcion_id", "niv"]).size().reset_index(name="m")
+_cnt = _cnt.sort_values(["cod", "inscripcion_id", "m", "niv"]).drop_duplicates(["cod", "inscripcion_id"], keep="last")
+niv_de = {(c, i): f"N{n}" for c, i, n in zip(_cnt.cod, _cnt.inscripcion_id, _cnt.niv)}
+NIVELES = [f"N{n}" for n in sorted(_cnt.niv.unique())]
+
+
+def con_dim(df, mapa):
+    return df.assign(dim=[mapa.get(x) for x in zip(df.cod, df.inscripcion_id)])
+
+
+def desglosar(mapa, valores):
+    """Recalcula los indicadores de estudiantes dentro de cada valor de una dimensión
+    (nivel socioeconómico o nivel de la carrera) y los publica como «CARRERA|VALOR»."""
+    global MATRICULA
+    se, sv, tu, be = (con_dim(x, mapa) for x in (sest_d, serv, tut, beca))
+    toda = MATRICULA
+    for g in valores:
+        MATRICULA = {kc: {i for i in s if mapa.get((kc[1], i)) == g} for kc, s in toda.items()}
+        partes = {"sat_est": serie_satisf(se[se.dim == g], 4), "sat_serv": serie_satisf(sv[sv.dim == g], 4)}
+        _r, _d = bloque_apoyo(tu[tu.dim == g], be[be.dim == g])
+        partes.update(_r)
+        for k, porper in _d["beca_tipo"].items():
+            detalle["beca_tipo"][f"{k}|{g}"] = porper
+        dets = {"sat_est": detalle_aspectos(se[se.dim == g], 4), "sat_serv": detalle_aspectos(sv[sv.dim == g], 4)}
+        for clave, porcar in partes.items():
+            for k, s in porcar.items():
+                for p in s:
+                    base = p.get("n")
+                    if base is None or base < MIN_CELDA:
+                        for campo in ("v", "n", "num", "cob", "media", "resp"):
+                            p.pop(campo, None)
+                        p["v"] = None
+                ind[clave][f"{k}|{g}"] = s
+        for clave, porcar in dets.items():
+            for k, porper in porcar.items():
+                detalle[clave][f"{k}|{g}"] = {c: [r for r in filas if r["n"] >= MIN_CELDA] for c, filas in porper.items()}
+    MATRICULA = toda
+
+
+desglosar(gse_de, GSE)
+desglosar(niv_de, NIVELES)
+
+# Cobertura de tutorías por nivel en cada periodo (panel de la vista 8).
+detalle["tut_niv"] = {}
+for k in CLAVES:
+    detalle["tut_niv"][k] = {}
+    for g in NIVELES:
+        for p in ind["tut_cob"][f"{k}|{g}"]:
+            if p["v"] is not None:
+                detalle["tut_niv"][k].setdefault(p["p"], {})[g] = {"v": p["v"], "n": p["n"]}
 
 # Tipos de beca con menos de 5 beneficiarios no se publican con su número:
 # «1 estudiante con beca por discapacidad» en una carrera y un semestre señala a alguien.
