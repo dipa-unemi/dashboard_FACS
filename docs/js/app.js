@@ -18,7 +18,6 @@
   const NOM = { FACS: 'Toda la facultad', ENF: 'Enfermería', NUT: 'Nutrición y Dietética' };
   const CORTO = { FACS: 'Facultad', ENF: 'Enfermería', NUT: 'Nutrición' };
   const COL = { FACS: '#1c3247', ENF: '#3c7aa0', NUT: '#f48521' };
-  const GRIS = '#9aabb8';
 
   /* ------------------------------------------------------------ vistas */
   const IC = {
@@ -158,8 +157,7 @@
   const tipHide = () => tip.classList.remove('on');
   function infoHTML(id) {
     const c = CAT[id];
-    return `<div class="tt">${esc(c.nombre)}</div>${esc(c.definicion)}` +
-      `<div class="nota">Fuente: ${esc(c.fuente)} · ${esc(c.frecuencia)} · Responsable: ${esc(c.responsable)}</div>`;
+    return `<div class="tt">${esc(c.nombre)}</div>${esc(c.definicion)}`;
   }
   function onTipTarget(e) {
     const t = e.target.closest('[data-info],[data-tip]');
@@ -189,15 +187,14 @@
     return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e;
   }
 
-  /* Series de comparación: la del alcance elegido manda; las demás dan contexto. */
+  /* Los gráficos muestran las dos carreras. La facultad no es una tercera línea:
+     es Enfermería y Nutrición juntas, y su valor está en la tarjeta del indicador.
+     Si se elige una carrera, la otra queda punteada como referencia. */
   function seriesPara(id) {
-    if (st.car === 'FACS') return [
-      { car: 'FACS', name: 'Facultad', color: COL.FACS, w: 2.6, pts: hasta(id, 'FACS') },
-      { car: 'ENF', name: 'Enfermería', color: COL.ENF, w: 1.7, pts: hasta(id, 'ENF') },
-      { car: 'NUT', name: 'Nutrición', color: COL.NUT, w: 1.7, pts: hasta(id, 'NUT') }];
-    return [
-      { car: st.car, name: CORTO[st.car], color: COL[st.car], w: 2.6, pts: hasta(id, st.car) },
-      { car: 'FACS', name: 'Facultad', color: GRIS, w: 1.5, dash: '5 4', pts: hasta(id, 'FACS') }];
+    return ['ENF', 'NUT'].map(c => {
+      const otra = st.car !== 'FACS' && st.car !== c;
+      return { car: c, name: CORTO[c], color: COL[c], w: otra ? 1.5 : 2.4, dash: otra ? '5 4' : null, pts: hasta(id, c) };
+    });
   }
   function leyenda(ss) {
     return '<div class="legend">' + ss.map(s => `<span data-car="${s.car}" data-tip="Clic para ver solo ${esc(NOM[s.car].toLowerCase())}"><i class="${s.dash ? 'dash' : ''}" style="border-color:${s.color}"></i>${esc(s.name)}</span>`).join('') + '</div>';
