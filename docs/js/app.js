@@ -11,10 +11,14 @@
  * tablero a ese periodo; pulsar una carrera (leyenda o etiqueta) cambia la
  * carrera; pulsar un nivel socioeconómico recalcula los indicadores de
  * estudiantes para ese nivel. Lo que no tiene ese desglose lo dice en su tarjeta.
+ *
+ * Rendimiento académico lee window.FACS_REND (exportado desde R) y tiene, además,
+ * su propio grupo de estudiantes (sexo, etnia, cohorte, tipo de ingreso, n.º de
+ * matrícula o banda de nota/asistencia). Los cruces no se combinan: un grupo a la vez.
  */
 (function () {
   'use strict';
-  const D = window.FACS_DATA, CAT = window.FACS_INDICADORES;
+  const D = window.FACS_DATA, CAT = window.FACS_INDICADORES, R = window.FACS_REND;
   const NOM = { FACS: 'Toda la facultad', ENF: 'Enfermería', NUT: 'Nutrición y Dietética' };
   const CORTO = { FACS: 'Facultad', ENF: 'Enfermería', NUT: 'Nutrición' };
   const COL = { FACS: '#1c3247', ENF: '#3c7aa0', NUT: '#f48521' };
@@ -30,11 +34,13 @@
     investigacion: '<path d="M4 20h16"/><rect x="5" y="12" width="3" height="6"/><rect x="10.5" y="8" width="3" height="10"/><rect x="16" y="4" width="3" height="14"/>',
     vinculacion: '<circle cx="12" cy="5" r="2.3"/><circle cx="5" cy="18" r="2.3"/><circle cx="19" cy="18" r="2.3"/><path d="M11 7l-5 9M13 7l5 9M7.3 18h9.4"/>',
     apoyo: '<path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/>',
+    rendimiento: '<path d="M12 6.5C10 5 7 4.6 3.5 5v13c3.5-.4 6.5.1 8.5 1.5 2-1.4 5-1.9 8.5-1.5V5C17 4.6 14 5 12 6.5z"/><path d="M12 6.5V19"/>',
     idea: '<path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0012 3z"/>'
   };
   const VISTAS = [
     { id: 'inicio', num: '', nom: 'Vista general', obj: 'Lectura ejecutiva de los indicadores estratégicos de la carrera.' },
     { sep: true },
+    { id: 'rendimiento', num: '1', nom: 'Rendimiento académico', obj: 'Aprobación, calificaciones y asistencia de los estudiantes en las asignaturas de la carrera.' },
     { id: 'grupos', num: '3', nom: 'Grupos de interés', obj: 'Percepción de estudiantes, graduados y docentes sobre la carrera.' },
     { id: 'investigacion', num: '6', nom: 'Investigación y actividad académica', obj: 'Producción científica del cuerpo docente: cuánto se publica, dónde y con quién.' },
     { id: 'vinculacion', num: '7', nom: 'Vinculación e impacto', obj: 'Actividad, cobertura y resultados de los proyectos de vinculación con la sociedad.' },
@@ -44,7 +50,7 @@
   /* ------------------------------------------------------------ estado */
   const anios = [];
   for (let a = 2021; a <= D.anioActual; a++) anios.push(a);
-  const st = { car: 'FACS', anio: D.anioActual, vista: 'inicio', foco: null, sem: null, gse: null, niv: null };
+  const st = { car: 'FACS', anio: D.anioActual, vista: 'inicio', foco: null, sem: null, gse: null, niv: null, rf: null };
   /* Indicadores de estudiantes: los únicos que se pueden desglosar por nivel socioeconómico. */
   const GSE_IND = new Set(['sat_est', 'sat_serv', 'tut_cob', 'tut_ejec', 'tut_int', 'beca_cob']);
   const GSE_DET = new Set(['sat_est', 'sat_serv', 'beca_tipo']);
@@ -55,6 +61,10 @@
   const ORDINAL = { 1: '1.er', 2: '2.º', 3: '3.er', 4: '4.º', 5: '5.º', 6: '6.º', 7: '7.º', 8: '8.º', 9: '9.º' };
   const nivNom = n => ORDINAL[n.slice(1)] + ' nivel';
   const dimAct = () => st.gse || st.niv;
+  /* Rendimiento: nivel y nivel socioeconómico (globales) o el grupo propio de la vista. */
+  const REND_CAMPO = { rend_est: 'e', rend_aprob: 'pa', rend_reprob: 'pr', rend_nota: 'np', rend_asist: 'as', rend_exc: 'pem', rend_rep: 'prep', rend_aband: 'pab' };
+  const REND_IND = new Set(R ? Object.keys(REND_CAMPO) : []);
+  const dimRend = () => st.niv || st.gse || (st.vista === 'rendimiento' ? st.rf : null);
 
   /* ------------------------------------------------------------ formato */
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -79,7 +89,8 @@
   function ordenP(p) { if (/^\d{4}$/.test(p)) return +p * 10; const [s, a] = p.split('-'); return +a * 10 + +s[0]; }
 
   /* ------------------------------------------------------------ datos */
-  const conGse = (id, car) => dimAct() && GSE_IND.has(id) ? car + '|' + dimAct() : car;
+  const conGse = (id, car) => REND_IND.has(id) ? (dimRend() ? car + '|' + dimRend() : car)
+    : dimAct() && GSE_IND.has(id) ? car + '|' + dimAct() : car;
   const serie = (id, car) => (D.ind[id] && D.ind[id][conGse(id, car)]) || [];
   const detDe = (nombre, car) => (D.det[nombre] || {})[dimAct() && GSE_DET.has(nombre) ? car + '|' + dimAct() : car];
   const esAnual = p => /^\d{4}$/.test(p);
@@ -145,6 +156,10 @@
       case 'tut_int': return `${num(n)} estudiantes atendidos`;
       case 'vin_avance': return `${num(n)} proyecto${n === 1 ? '' : 's'} terminado${n === 1 ? '' : 's'}`;
       case 'vin_culm': return `${num(n)} participaciones cerradas`;
+      case 'rend_est': return `${num(n)} evaluaciones válidas`;
+      case 'rend_rep': return `${num(p.e)} estudiantes`;
+      case 'rend_aprob': case 'rend_reprob': case 'rend_nota': case 'rend_asist': case 'rend_exc': case 'rend_aband':
+        return `${num(n)} evaluaciones · ${num(p.e)} estudiantes`;
       default: return '';
     }
   }
@@ -303,13 +318,13 @@
     if (!xs.length) { el.innerHTML = '<div class="empty"><b>Sin datos hasta ' + st.anio + '</b></div>'; return; }
     const W = Math.max(300, el.clientWidth || 640), H = opt.h || 225, ml = 40, mr = 14, mt = 22, mb = 26, iw = W - ml - mr, ih = H - mt - mb;
     const tot = xs.map(x => x.segs.reduce((s, q) => s + (q.v || 0), 0));
-    const ymax = niceMax(Math.max(...tot, 1) * 1.08);
+    const ymax = opt.ymax || niceMax(Math.max(...tot, 1) * 1.08);
     const Y = v => mt + ih - (v / ymax) * ih;
     const bw = Math.min(54, iw / xs.length * 0.62), step = iw / xs.length;
     let g = '<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#fff"/><line x1="0" y1="0" x2="0" y2="6" stroke="#9aabb8" stroke-width="2.4"/></pattern></defs>';
     [0, ymax / 2, ymax].forEach(t => {
       g += `<line x1="${ml}" x2="${W - mr}" y1="${Y(t)}" y2="${Y(t)}" stroke="#e6ecf0"/>` +
-        `<text x="${ml - 7}" y="${Y(t) + 3.5}" text-anchor="end" font-size="10.5" fill="#6f8596">${num(t, 0)}</text>`;
+        `<text x="${ml - 7}" y="${Y(t) + 3.5}" text-anchor="end" font-size="10.5" fill="#6f8596">${num(t, 0)}${opt.pct ? '%' : ''}</text>`;
     });
     xs.forEach((x, i) => {
       const cx = ml + step * i + step / 2, sel = esSel(x);
@@ -324,8 +339,8 @@
         y0 -= h;
       });
       if (x.parcial) g += `<rect x="${cx - bw / 2}" y="${Y(tot[i])}" width="${bw}" height="${Y(0) - Y(tot[i])}" fill="url(#hatch)" opacity=".28" pointer-events="none"/>`;
-      g += `<text x="${cx}" y="${Y(tot[i]) - 6}" text-anchor="middle" font-size="12" font-weight="700" fill="#1c3247">${esc(opt.fmt ? opt.fmt(tot[i]) : num(tot[i]))}</text>` +
-        `<text x="${cx}" y="${H - 8}" text-anchor="middle" font-size="10.5" fill="${sel ? '#1c3247' : '#6f8596'}" font-weight="${sel ? 700 : 400}">${esc(tick(x.p))}${x.parcial ? '*' : ''}</text>`;
+      if (!opt.sinTotal) g += `<text x="${cx}" y="${Y(tot[i]) - 6}" text-anchor="middle" font-size="12" font-weight="700" fill="#1c3247">${esc(opt.fmt ? opt.fmt(tot[i]) : num(tot[i]))}</text>`;
+      g += `<text x="${cx}" y="${H - 8}" text-anchor="middle" font-size="10.5" fill="${sel ? '#1c3247' : '#6f8596'}" font-weight="${sel ? 700 : 400}">${esc(tick(x.p))}${x.parcial ? '*' : ''}</text>`;
     });
     el.innerHTML = (opt.legend || '') + svgEl(W, H, g) + (xs.some(x => x.parcial) ? '<div class="ph-note" style="margin:4px 0 0">* Año en curso: la cifra todavía puede crecer.</div>' : '');
     el.querySelectorAll('path.seg').forEach(r => {
@@ -333,7 +348,7 @@
         const x = xs[+r.dataset.i], q = x.segs[+r.dataset.j];
         let h = `<div class="tt">${esc(x.l)}</div>`;
         x.segs.slice().reverse().forEach(z => { if (z.v != null) h += `<div class="r"><i style="border-color:${z.color}"></i><b>${esc(opt.fmt ? opt.fmt(z.v) : num(z.v))}</b><span>${esc(z.k)}</span></div>`; });
-        if (x.segs.length > 1) h += `<div class="nota">Total: ${num(tot[+r.dataset.i])}</div>`;
+        if (x.segs.length > 1 && !opt.sinTotal) h += `<div class="nota">Total: ${num(tot[+r.dataset.i])}</div>`;
         if (x.nota) h += `<div class="nota">${esc(x.nota)}</div>`;
         h += `<div class="nota">Clic: filtrar todo el tablero a ${esc(x.p)}</div>`;
         tipShow(h, e.clientX, e.clientY);
@@ -357,8 +372,8 @@
         d = `<span class="trend d ${cls}" style="margin-left:6px">${Math.abs(dd) < 1 ? '→' : dd > 0 ? '↑' : '↓'} ${num(Math.abs(dd), 1)} pp</span>`;
       }
       let t = (o.tip ? o.tip(r) : '') || `${r.a}: ${o.fmt ? o.fmt(r.v) : num(r.v, 1) + ' %'}`;
-      const pulsable = r.gse ? ` data-gse="${esc(r.gse)}"` : r.niv ? ` data-niv="${esc(r.niv)}"` : '';
-      const actual = r.gse ? st.gse : r.niv ? st.niv : null, propio = r.gse || r.niv;
+      const pulsable = r.gse ? ` data-gse="${esc(r.gse)}"` : r.niv ? ` data-niv="${esc(r.niv)}"` : r.rf ? ` data-rf="${esc(r.rf)}"` : '';
+      const actual = r.gse ? st.gse : r.niv ? st.niv : r.rf ? st.rf : null, propio = r.gse || r.niv || r.rf;
       if (propio) t += actual === propio ? '\nClic: quitar este filtro' : '\nClic: filtrar el tablero a este grupo';
       const clase = 'hrow' + (propio && actual ? (actual === propio ? ' sel' : ' mut') : '');
       const valor = r.v == null ? (o.vacio || '—') : (o.fmt ? o.fmt(r.v) : num(r.v, 1) + ' %');
@@ -385,9 +400,10 @@
     const tag = o.link ? 'button type="button"' : 'div';
     const attrs = o.link ? ` data-go="${c.vista}" data-foco="${id}"` : '';
     const lbl = `<div class="top"><span class="lbl">${c.tipo ? `<span style="color:var(--acento)">${esc(c.tipo)} · </span>` : ''}${esc(c.nombre)}</span>${info(id)}</div>`;
-    const sinGse = dimAct() && !GSE_IND.has(id);
+    const sinGse = dimAct() && !GSE_IND.has(id) && !REND_IND.has(id);
     const cls = 'kpi' + (sinGse ? ' nogse' : '');
-    if (!cur) return `<${tag} class="${cls} na" id="k-${id}"${attrs}>${lbl}<div class="val">Sin medición</div><div class="per">No hay resultados ${esc(etiquetaCorte())}</div></${tag.split(' ')[0]}>`;
+    const pocos = REND_IND.has(id) && dimRend() && !serie(id, st.car).length;
+    if (!cur) return `<${tag} class="${cls} na" id="k-${id}"${attrs}>${lbl}<div class="val">Sin medición</div><div class="per">${pocos ? `Grupo con menos de ${R.minBase} estudiantes: no se publica` : 'No hay resultados ' + esc(etiquetaCorte())}</div></${tag.split(' ')[0]}>`;
     const t = tendencia(id, cur, m.prev), e = estado(id, st.car, cur.v);
     const base = sinGse ? `Sin desglose por ${st.gse ? 'nivel socioeconómico' : 'nivel de la carrera'}: muestra a toda la población` : baseTxt(id, cur);
     return `<${tag} class="${cls}" id="k-${id}"${attrs}>${lbl}` +
@@ -421,7 +437,8 @@
     return `<div class="lectura"><h3><svg viewBox="0 0 24 24">${IC.idea}</svg>${esc(titulo || 'Lo que dicen los datos')}</h3><ul>${items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
   }
   const B = s => `<b>${esc(s)}</b>`;
-  const deGrupo = () => st.gse ? ` de nivel socioeconómico ${GSE_NOM[st.gse].toLowerCase()}` : st.niv ? ` de ${nivNom(st.niv)}` : '';
+  const deGrupo = () => st.gse ? ` de nivel socioeconómico ${GSE_NOM[st.gse].toLowerCase()}` : st.niv ? ` de ${nivNom(st.niv)}` :
+    st.vista === 'rendimiento' && st.rf ? ` del grupo «${esc(rfNom(st.rf))}»` : '';
   const q = s => `«${esc(s)}»`;
   function panel(titulo, id, cuerpo, nota) {
     return `<div class="panel"><div class="ph"><h3>${esc(titulo)}</h3>${id ? info(id) : ''}</div>${nota ? `<p class="ph-note">${nota}</p>` : '<div style="height:8px"></div>'}${cuerpo}</div>`;
@@ -434,18 +451,234 @@
   const lblDe = p => { const x = D.periodos.find(z => z.p === p); return x ? x.l : p; };
   const mapa = rows => { const m = {}; (rows || []).forEach(r => { m[r.a] = r.v; }); return m; };
 
+  /* Rendimiento: filas [e, ev, pa, ...] -> objetos, y series por indicador en D.ind
+     con la misma clave de cruce que el resto del tablero ("ENF", "ENF|N3", "ENF|BAJO", "ENF|sexo:MUJER"). */
+  const RF = {};
+  if (R) {
+    Object.entries(R.res).forEach(([k, per]) => {
+      RF[k] = {};
+      Object.entries(per).forEach(([p, fila]) => { const o = {}; R.campos.forEach((c, i) => { o[c] = fila[i]; }); RF[k][p] = o; });
+    });
+    REND_IND.forEach(id => {
+      D.ind[id] = {};
+      Object.entries(RF).forEach(([k, per]) => {
+        D.ind[id][k] = Object.keys(per).sort((a, b) => ordenP(a) - ordenP(b))
+          .map(p => ({ p, a: +p.slice(-4), l: lblDe(p), v: per[p][REND_CAMPO[id]], n: per[p].ev, e: per[p].e }));
+      });
+    });
+  }
+  const NIVELES = [...new Set(Object.keys(RF).filter(k => /\|N\d$/.test(k)).map(k => k.split('|')[1]))].sort();
+  const RF_TIPOS = { sexo: 'Sexo', etnia: 'Autoidentificación étnica', tipo_ingreso: 'Tipo de ingreso', cohorte: 'Cohorte de ingreso', numero_matricula: 'Número de matrícula' };
+  function rfNom(rf) {
+    const i = rf.indexOf(':'), t = rf.slice(0, i), v = rf.slice(i + 1);
+    if (t === 'sexo') return v === 'MUJER' ? 'Mujeres' : 'Hombres';
+    if (t === 'etnia') return v[0] + v.slice(1).toLowerCase();
+    if (t === 'cohorte') return 'Cohorte ' + v.replace('-', ' ');
+    if (t === 'numero_matricula') return v + '.ª matrícula';
+    if (t === 'banda_nota') return 'Nota ' + v.replace('-', '–');
+    if (t === 'banda_asistencia') return 'Asistencia ' + v.replace('-', '–') + ' %';
+    return v;
+  }
+  const rfValido = rf => !!rf && /^[a-z_]+:/.test(rf) && Object.keys(RF).some(k => k.endsWith('|' + rf));
+
   /* ================================================================ VISTAS */
   function vInicio() {
     const secs = [
+      ['rendimiento', 'Rendimiento académico', ['rend_aprob', 'rend_nota', 'rend_asist']],
       ['grupos', 'Grupos de interés', ['sat_est', 'sat_grad', 'sat_doc']],
       ['investigacion', 'Investigación y actividad académica', ['pub_total', 'doc_prod', 'pub_alto']],
       ['vinculacion', 'Vinculación e impacto', ['vin_proy', 'vin_benef', 'vin_avance']],
       ['apoyo', 'Servicios de apoyo', ['tut_cob', 'beca_cob', 'sat_serv']]
     ];
-    const destacados = [insGrupos()[0], insInvest()[0], insVinc()[0], insApoyo()[0]];
+    const destacados = [insRend()[0], insGrupos()[0], insInvest()[0], insVinc()[0], insApoyo()[0]];
     return lectura(destacados, 'Lo más destacado') + secs.map(([v, t, ids]) =>
       `<div class="sec"><h3>${esc(t)}</h3><a href="#${v}" data-go="${v}">Ver detalle →</a></div>` +
       `<div class="kpis">${ids.map(id => kpi(id, { link: true })).join('')}</div>`).join('');
+  }
+
+  /* ---------------- Vista 1 · Rendimiento académico ---------------- */
+  const REND_CAT = ['Reprobado', 'Aprobado', 'Bueno', 'Muy Bueno', 'Excelente'];
+  const REND_COL = ['#f48521', '#a9cde2', '#4597bf', '#335f7f', '#1c3247'];
+  const BANDAS = Array.from({ length: 20 }, (_, i) => String(i * 5).padStart(2, '0') + '-' + (i === 19 ? '100' : String(i * 5 + 4).padStart(2, '0')));
+  const claveRend = car => dimRend() ? car + '|' + dimRend() : car;
+  const filaRend = (car, p) => (RF[claveRend(car)] || {})[p];
+  /* Semestre de referencia de los paneles: el último con datos hasta el corte. */
+  const pRend = () => { const d = ultimoDet(RF[st.car]); return d && d.k; };
+  const sinCruce = txt => `<div class="empty"><b>Sin cruce con el grupo elegido</b>${esc(txt)}</div>`;
+
+  function insRend() {
+    const out = [], c = st.car;
+    if (!R) return out;
+    const a = medir('rend_aprob', c);
+    if (a.cur) {
+      let s = `La aprobación${deGrupo()} es ${B(fmt('rend_aprob', a.cur.v))} de las evaluaciones en ${esc(a.cur.l)}`;
+      if (a.prev) {
+        const t = tendencia('rend_aprob', a.cur, a.prev);
+        s += t.dir ? `, ${t.dir > 0 ? 'sube' : 'baja'} ${B(num(Math.abs(t.d), 1) + ' pp')} frente a ${esc(a.prev.l)}` : `, estable frente a ${esc(a.prev.l)}`;
+      }
+      out.push(s + '.');
+    }
+    if (c === 'FACS') {
+      const e = medir('rend_reprob', 'ENF').cur, n = medir('rend_reprob', 'NUT').cur;
+      if (e && n && Math.abs(e.v - n.v) >= 3) {
+        const [hi, lo] = e.v > n.v ? [['Enfermería', e], ['Nutrición', n]] : [['Nutrición', n], ['Enfermería', e]];
+        out.push(`${hi[0]} reprueba ${B(fmt('rend_reprob', hi[1].v))} de sus evaluaciones, frente a ${fmt('rend_reprob', lo[1].v)} en ${lo[0]}.`);
+      }
+    }
+    const nt = medir('rend_nota', c).cur, rn = nt && filaRend(c, nt.p);
+    if (rn) out.push(`La nota promedio es ${B(num(nt.v, 1))} sobre 100 (mediana ${num(rn.nm, 0)}); ${B(num(rn.pem, 1) + ' %')} de las evaluaciones llega a Muy Bueno o Excelente.`);
+    const p = pRend();
+    if (p && !dimRend()) {
+      const nv = NIVELES.map(n => ({ n, r: (RF[c + '|' + n] || {})[p] })).filter(x => x.r && x.r.ev >= 30);
+      if (nv.length > 2) {
+        const w = nv.reduce((m, x) => x.r.pr > m.r.pr ? x : m);
+        if (w.r.pr > 0) out.push(`El nivel con más reprobación en ${esc(lblDe(p))} es ${B(nivNom(w.n))}: ${B(num(w.r.pr, 1) + ' %')} de sus evaluaciones.`);
+      }
+      const m1 = (RF[c + '|numero_matricula:1'] || {})[p], m2 = (RF[c + '|numero_matricula:2'] || {})[p];
+      if (m1 && m2) out.push(`Quienes cursan en segunda matrícula aprueban el ${B(num(m2.pa, 1) + ' %')} de las evaluaciones, frente al ${num(m1.pa, 1)} % en primera matrícula.`);
+    }
+    const as = medir('rend_asist', c).cur, ra = as && filaRend(c, as.p);
+    if (ra && ra.pba != null) out.push(`La asistencia promedio es ${B(fmt('rend_asist', as.v))}; ${B(num(ra.pba, 1) + ' %')} de los registros queda bajo el ${R.umbralAsistencia} % institucional.`);
+    return out;
+  }
+
+  /* Histograma de 20 bandas de 5 puntos. Pulsar una banda filtra el tablero a esa banda. */
+  function distDe(v) {
+    const dim = dimRend();
+    let k = st.car;
+    if (dim) {
+      if (/^N\d$/.test(dim)) return null;  // no hay histogramas por nivel
+      if (dim.startsWith('banda_')) { if (!dim.startsWith(v === 'n' ? 'banda_nota:' : 'banda_asistencia:')) return null; }
+      else k = st.car + '|' + dim;
+    }
+    const d = ultimoDet(R.dist[k]);
+    return d && d.rows[v] ? { p: d.k, arr: d.rows[v] } : null;
+  }
+  function histChart(el, d, o) {
+    const tot = d.arr.reduce((s, v) => s + v, 0);
+    if (!tot) { el.innerHTML = '<div class="empty"><b>Sin registros en este periodo</b></div>'; return; }
+    const W = Math.max(300, el.clientWidth || 560), H = 205, ml = 38, mr = 10, mt = 16, mb = 28, iw = W - ml - mr, ih = H - mt - mb;
+    const pc = d.arr.map(v => v / tot * 100), ymax = niceMax(Math.max(...pc) * 1.1);
+    const Y = v => mt + ih - v / ymax * ih, bw = iw / 20;
+    let g = '';
+    [0, ymax / 2, ymax].forEach(t => {
+      g += `<line x1="${ml}" x2="${W - mr}" y1="${Y(t)}" y2="${Y(t)}" stroke="#e6ecf0"/>` +
+        `<text x="${ml - 7}" y="${Y(t) + 3.5}" text-anchor="end" font-size="10.5" fill="#6f8596">${num(t, t % 1 ? 1 : 0)}%</text>`;
+    });
+    pc.forEach((v, i) => {
+      const rf = o.tipo + ':' + BANDAS[i], sel = st.rf === rf, otra = st.rf && st.rf.startsWith(o.tipo + ':') && !sel;
+      const color = (i + 1) * 5 <= o.ref ? '#f7964d' : o.color;
+      g += `<rect class="bar" data-i="${i}" x="${ml + i * bw + 1}" y="${Y(v)}" width="${Math.max(bw - 2, 1)}" height="${Math.max(Y(0) - Y(v), 0)}" fill="${color}" opacity="${otra ? .35 : 1}" rx="2"${sel ? ' stroke="#1c3247" stroke-width="1.5"' : ''}/>`;
+      if (i % 2 === 0) g += `<text x="${ml + i * bw}" y="${H - 9}" text-anchor="middle" font-size="10.5" fill="#6f8596">${i * 5}</text>`;
+    });
+    g += `<text x="${ml + iw}" y="${H - 9}" text-anchor="middle" font-size="10.5" fill="#6f8596">100</text>`;
+    const xr = ml + o.ref / 5 * bw;
+    g += `<line x1="${xr}" x2="${xr}" y1="${mt - 8}" y2="${mt + ih}" stroke="#fc7e00" stroke-width="1.3" stroke-dasharray="3 3"/>` +
+      `<text x="${xr + 4}" y="${mt - 1}" font-size="10.5" fill="#b86200" font-weight="700">${esc(o.refTxt)}</text>`;
+    el.innerHTML = svgEl(W, H, g);
+    el.querySelectorAll('rect.bar').forEach(r => {
+      const i = +r.dataset.i, rf = o.tipo + ':' + BANDAS[i], hay = !!RF[st.car + '|' + rf];
+      r.style.cursor = hay ? 'pointer' : 'default';
+      r.addEventListener('pointermove', e => {
+        tipShow(`<div class="tt">${esc(o.eje)} ${esc(BANDAS[i].replace('-', '–'))}</div><div class="r"><b>${num(pc[i], 1)} %</b><span>${num(d.arr[i])} registros</span></div>` +
+          `<div class="nota">${hay ? (st.rf === rf ? 'Clic: quitar este filtro' : 'Clic: filtrar el tablero a esta banda') : 'Menos de ' + R.minBase + ' estudiantes: sin filtro'}</div>`, e.clientX, e.clientY);
+      });
+      r.addEventListener('pointerleave', tipHide);
+      if (hay) r.addEventListener('click', () => filtrarRend(rf));
+    });
+  }
+
+  function vRend() {
+    if (!R) return '<div class="empty"><b>Faltan los datos de rendimiento</b>No se cargó data/rendimiento-data.js.</div>';
+    const c = st.car, dim = dimRend(), p = pRend(), k = claveRend(c);
+    const ids = ['rend_est', 'rend_aprob', 'rend_reprob', 'rend_nota', 'rend_asist', 'rend_exc', 'rend_rep', 'rend_aband'];
+
+    // Selector de grupo: nivel socioeconómico (filtro global) y los grupos propios de la vista
+    const grupos = {};
+    Object.keys(RF).forEach(x => {
+      const m = x.match(/^([A-Z]+)\|([a-z_]+):(.+)$/);
+      if (m && m[1] === c && RF_TIPOS[m[2]]) (grupos[m[2]] = grupos[m[2]] || []).push(m[2] + ':' + m[3]);
+    });
+    const valSel = st.gse ? 'g:' + st.gse : st.rf || '';
+    const opt = (v, t) => `<option value="${esc(v)}"${v === valSel ? ' selected' : ''}>${esc(t)}</option>`;
+    let opts = opt('', 'Todos los estudiantes');
+    const gseDisp = GSE_ORD.filter(g => RF[c + '|' + g]);
+    if (gseDisp.length) opts += `<optgroup label="Nivel socioeconómico">${gseDisp.map(g => opt('g:' + g, GSE_NOM[g])).join('')}</optgroup>`;
+    Object.keys(RF_TIPOS).forEach(t => {
+      if (!grupos[t]) return;
+      const vs = grupos[t].sort((a, b) => t === 'cohorte' ? ordenP(a.split(':')[1]) - ordenP(b.split(':')[1]) : a.localeCompare(b));
+      opts += `<optgroup label="${esc(RF_TIPOS[t])}">${vs.map(v => opt(v, rfNom(v))).join('')}</optgroup>`;
+    });
+    if (st.rf && !st.gse && !Object.values(grupos).some(vs => vs.includes(st.rf))) opts += opt(st.rf, rfNom(st.rf));
+    const barra = `<div class="rfbar"><label for="fRend">Grupo de estudiantes</label><select id="fRend">${opts}</select>` +
+      `<span>Un grupo a la vez. También puedes pulsar un nivel, un número de matrícula o una barra de los histogramas. No se publican grupos con menos de ${R.minBase} estudiantes.</span></div>`;
+
+    // Categorías de la escala por periodo (100 %)
+    const xsCat = Object.keys(RF[k] || {}).filter(dentroP).sort((a, b) => ordenP(a) - ordenP(b)).map(pp => {
+      const r = RF[k][pp], t = r.c1 + r.c2 + r.c3 + r.c4 + r.c5;
+      return { p: pp, l: lblDe(pp), a: +pp.slice(-4), nota: `${num(t)} evaluaciones con nota`, segs: REND_CAT.map((nm, j) => ({ k: nm, v: t ? r['c' + (j + 1)] / t * 100 : 0, color: REND_COL[j] })) };
+    });
+    const legCat = '<div class="legend">' + REND_CAT.map((nm, j) => `<span><i class="box" style="background:${REND_COL[j]}"></i>${nm}</span>`).join('') + '</div>';
+
+    // Escala institucional con el reparto del semestre de referencia
+    const rc = p && (RF[k] || {})[p], tc = rc ? rc.c1 + rc.c2 + rc.c3 + rc.c4 + rc.c5 : 0;
+    const escala = `<div class="tbl-wrap"><table class="res"><thead><tr><th>Categoría</th><th>Nota</th><th>Condición</th><th class="n">${p ? esc(lblDe(p)) : 'Periodo'}</th></tr></thead><tbody>` +
+      R.escala.map((e, j) => `<tr><td><i class="sw" style="background:${REND_COL[j]}"></i>${esc(e.categoria)}</td><td class="per">${num(e.nota_min, 0)} – ${num(Math.floor(e.nota_max), 0)}</td>` +
+        `<td>${esc(e.condicion)}</td><td class="n"><b>${tc ? num(rc['c' + (j + 1)] / tc * 100, 1) + ' %' : '—'}</b></td></tr>`).join('') + '</tbody></table></div>' +
+      '<p class="ph-note" style="margin:10px 0 0">Escala del Art. 75. Rangos referenciales, pendientes de validación por la Dirección.</p>';
+
+    // Aprobación por número de matrícula
+    let matHTML;
+    if (dim && !dim.startsWith('numero_matricula:')) matHTML = sinCruce('El número de matrícula no se cruza con otro grupo de estudiantes.');
+    else {
+      const rows = ['1', '2', '3', '4'].map(n => { const r = p && (RF[c + '|numero_matricula:' + n] || {})[p]; return r && { a: n + '.ª matrícula', rf: 'numero_matricula:' + n, v: r.pa, ev: r.ev, e: r.e }; }).filter(Boolean);
+      matHTML = hbars(rows, { max: 100, color: COL[c], tip: r => `${r.a}: ${num(r.v, 1)} % de aprobación\n${num(r.ev)} evaluaciones · ${num(r.e)} estudiantes` });
+    }
+
+    // Rendimiento por nivel
+    let nivHTML;
+    if (dim && !/^N\d$/.test(dim)) nivHTML = sinCruce('El nivel no se cruza con otro grupo de estudiantes.');
+    else {
+      const rows = p ? NIVELES.map(n => ({ n, r: (RF[c + '|' + n] || {})[p] })).filter(x => x.r) : [];
+      const maxPr = Math.max(1, ...rows.map(x => x.r.pr || 0));
+      nivHTML = rows.length ? `<div class="tbl-wrap"><table class="res"><thead><tr><th>Nivel</th><th class="n">Estudiantes</th><th class="n">Aprobación</th><th>Reprobación</th><th class="n">Nota prom.</th><th class="n">Asistencia</th></tr></thead><tbody>` +
+        rows.map(({ n, r }) => `<tr class="${st.niv === n ? 'hl' : ''}" data-niv="${n}" data-tip="${esc(st.niv === n ? 'Clic: quitar este filtro' : 'Clic: filtrar el tablero a ' + nivNom(n))}">` +
+          `<td>${esc(nivNom(n))}</td><td class="n">${num(r.e)}</td><td class="n">${num(r.pa, 1)} %</td>` +
+          `<td><span class="mini-bar"><i style="width:${(r.pr || 0) / maxPr * 100}%;background:#f48521"></i></span>${num(r.pr, 1)} %</td>` +
+          `<td class="n">${num(r.np, 1)}</td><td class="n">${num(r.as, 1)} %</td></tr>`).join('') + '</tbody></table></div>'
+        : '<div class="empty"><b>Sin detalle por nivel para este periodo</b></div>';
+    }
+
+    // Detalle por carrera
+    const filasCar = ['FACS', 'ENF', 'NUT'].map(cc => [cc, p && filaRend(cc, p)]);
+    const carHTML = `<div class="tbl-wrap"><table class="res"><thead><tr><th>Carrera</th><th class="n">Estudiantes</th><th class="n">Evaluaciones</th><th class="n">Aprobación</th><th class="n">Reprobación</th><th class="n">Nota prom.</th><th class="n">Asistencia</th><th class="n">Repetidores</th><th class="n">Asistencia &lt; ${R.umbralAsistencia} %</th></tr></thead><tbody>` +
+      filasCar.map(([cc, r]) => `<tr class="${cc === c ? 'hl' : ''}" data-carsel="${cc}" data-tip="${esc('Clic: ver ' + NOM[cc].toLowerCase())}"><td><div class="ind">${esc(NOM[cc])}</div></td>` +
+        (r ? `<td class="n">${num(r.e)}</td><td class="n">${num(r.ev)}</td><td class="n"><b>${num(r.pa, 1)} %</b></td><td class="n">${num(r.pr, 1)} %</td><td class="n">${num(r.np, 1)}</td><td class="n">${num(r.as, 1)} %</td><td class="n">${num(r.prep, 1)} %</td><td class="n">${num(r.pba, 1)} %</td>`
+          : '<td class="n" colspan="8"><span class="per">Sin datos publicables para este grupo</span></td>') + '</tr>').join('') + '</tbody></table></div>';
+
+    const dN = distDe('n'), dA = distDe('a');
+    const histo = (d, o) => d ? slot(el => histChart(el, d, o)) : sinCruce(dim && /^N\d$/.test(dim) ? 'Los histogramas no tienen desglose por nivel.' : 'No hay histograma publicado para este grupo.');
+    const notaP = p ? esc(lblDe(p)) + (dim ? ' · ' + esc(st.niv ? nivNom(st.niv) : st.gse ? 'Nivel socioeconómico ' + GSE_NOM[st.gse].toLowerCase() : rfNom(dim)) : '') : '';
+
+    return barra + `<div class="kpis">${ids.map(id => kpi(id)).join('')}</div>` + lectura(insRend()) +
+      `<div class="grid3">` +
+      panel('Aprobación por periodo', 'rend_aprob', slot(el => lineChart(el, 'rend_aprob', { h: 220 })), 'Porcentaje de evaluaciones válidas aprobadas, por semestre') +
+      panel('Reprobación por periodo', 'rend_reprob', slot(el => lineChart(el, 'rend_reprob', { h: 220 })), 'Porcentaje de evaluaciones válidas reprobadas, por semestre') +
+      panel('Nota promedio', 'rend_nota', slot(el => lineChart(el, 'rend_nota', { h: 220 })), 'Sobre 100 puntos; se aprueba con 70') +
+      `</div><div class="grid2 wl arriba">` +
+      panel('Distribución por categoría de la escala institucional', 'rend_exc', slot(el => columnChart(el, { xs: xsCat, legend: legCat, ymax: 100, pct: true, sinTotal: true, fmt: v => num(v, 1) + ' %', h: 235 })), 'Proporción de evaluaciones con nota en cada categoría, por semestre') +
+      panel('Escala institucional', null, escala, 'Categorías de valoración y su peso en el semestre de referencia') +
+      `</div><div class="grid2">` +
+      panel('Distribución de notas', 'rend_nota', histo(dN, { tipo: 'banda_nota', ref: R.notaAprobacion, refTxt: 'Aprueba ' + R.notaAprobacion, eje: 'Nota', color: COL[c] }),
+        dN ? `${esc(lblDe(dN.p))} · bandas de 5 puntos; en naranja, bajo la nota de aprobación` : '') +
+      panel('Distribución de asistencia', 'rend_asist', histo(dA, { tipo: 'banda_asistencia', ref: R.umbralAsistencia, refTxt: 'Umbral ' + R.umbralAsistencia + ' %', eje: 'Asistencia', color: COL[c] }),
+        dA ? `${esc(lblDe(dA.p))} · bandas de 5 puntos; en naranja, bajo el umbral institucional` : '') +
+      `</div><div class="grid2 wl arriba">` +
+      panel('Rendimiento por nivel', 'rend_reprob', nivHTML, p ? `${esc(lblDe(p))} · pulsa un nivel para filtrar el tablero` : '') +
+      panel('Aprobación por número de matrícula', 'rend_rep', matHTML, p ? `${esc(lblDe(p))} · pulsa una matrícula para filtrar` : '') +
+      `</div>` +
+      panel('Detalle de rendimiento por carrera', null, carHTML, notaP) +
+      tabla(ids);
   }
 
   /* ---------------- Vista 3 ---------------- */
@@ -639,7 +872,7 @@
   }
 
   /* ================================================================ render */
-  const RENDER = { inicio: vInicio, grupos: vGrupos, investigacion: vInvest, vinculacion: vVinc, apoyo: vApoyo };
+  const RENDER = { inicio: vInicio, rendimiento: vRend, grupos: vGrupos, investigacion: vInvest, vinculacion: vVinc, apoyo: vApoyo };
   const root = document.getElementById('vista');
 
   function nav() {
@@ -654,6 +887,7 @@
     if (st.sem) chips.push(`<button type="button" class="chip" data-quitar="sem">Periodo: ${esc(lblDe(st.sem))}<span class="x" aria-label="Quitar">×</span></button>`);
     if (st.gse) chips.push(`<button type="button" class="chip" data-quitar="gse">Nivel socioeconómico: ${esc(GSE_NOM[st.gse])}<span class="x" aria-label="Quitar">×</span></button>`);
     if (st.niv) chips.push(`<button type="button" class="chip" data-quitar="niv">${esc(nivNom(st.niv))}<span class="x" aria-label="Quitar">×</span></button>`);
+    if (st.rf && st.vista === 'rendimiento') chips.push(`<button type="button" class="chip" data-quitar="rf">${esc(rfNom(st.rf))}<span class="x" aria-label="Quitar">×</span></button>`);
     const head = `<div class="vhead"><div class="ic"><svg viewBox="0 0 24 24">${IC[v.id]}</svg></div><div><h2>${v.num ? v.num + '. ' : ''}${esc(v.nom)}</h2><p>${esc(v.obj)} · ${esc(NOM[st.car])}, ${esc(etiquetaCorte())}</p></div>` +
       `<div class="chips">${chips.join('')}${chips.length ? '<button type="button" class="chip-limpiar" data-quitar="todo">Quitar filtros</button>' : '<span class="chip-ayuda">Pulsa un punto, una barra o una carrera en los gráficos para filtrar todo el tablero</span>'}</div></div>`;
     pend = [];
@@ -664,7 +898,7 @@
       if (k) { k.classList.add('flash'); if (scroll) k.scrollIntoView({ block: 'center' }); }
     } else if (scroll) window.scrollTo(0, 0);
     const h = '#' + st.vista + (st.foco ? '/' + st.foco : '') + `?c=${st.car}&a=${st.anio}` +
-      (st.sem ? '&s=' + st.sem : '') + (st.gse ? '&g=' + encodeURIComponent(st.gse) : '') + (st.niv ? '&n=' + st.niv : '');
+      (st.sem ? '&s=' + st.sem : '') + (st.gse ? '&g=' + encodeURIComponent(st.gse) : '') + (st.niv ? '&n=' + st.niv : '') + (st.rf ? '&f=' + encodeURIComponent(st.rf) : '');
     if (location.hash !== h) history.replaceState(null, '', h);
   }
   function leerHash() {
@@ -679,6 +913,7 @@
     if (st.sem) st.anio = +st.sem.slice(-4);
     st.gse = GSE_NOM[qs.get('g')] ? qs.get('g') : null;
     st.niv = !st.gse && NIV_ORD.includes(qs.get('n')) ? qs.get('n') : null;
+    st.rf = !st.gse && !st.niv && rfValido(qs.get('f')) ? qs.get('f') : null;
   }
 
   /* ---------- filtro cruzado ---------- */
@@ -689,8 +924,10 @@
     fA.value = st.anio; render(false);
   }
   function filtrarCarrera(c) { st.car = st.car === c && c !== 'FACS' ? 'FACS' : c; fC.value = st.car; render(false); }
-  function filtrarGse(g) { st.gse = st.gse === g ? null : g; if (st.gse) st.niv = null; fN.value = st.niv || ''; render(false); }
-  function filtrarNivel(n) { st.niv = st.niv === n ? null : n; if (st.niv) st.gse = null; fN.value = st.niv || ''; render(false); }
+  function filtrarGse(g) { st.gse = st.gse === g ? null : g; if (st.gse) { st.niv = null; st.rf = null; } fN.value = st.niv || ''; render(false); }
+  function filtrarNivel(n) { st.niv = st.niv === n ? null : n; if (st.niv) { st.gse = null; st.rf = null; } fN.value = st.niv || ''; render(false); }
+  /* Grupo propio de Rendimiento: excluye nivel y nivel socioeconómico (un cruce a la vez). */
+  function filtrarRend(rf) { st.rf = st.rf === rf ? null : rf; if (st.rf) { st.gse = null; st.niv = null; } fN.value = ''; render(false); }
 
   /* filtros */
   const fC = document.getElementById('fCarrera'), fA = document.getElementById('fAnio'), fN = document.getElementById('fNivel');
@@ -698,7 +935,14 @@
   fA.innerHTML = anios.slice().reverse().map(a => `<option value="${a}">${a}</option>`).join('');
   leerHash();
   fC.value = st.car; fA.value = st.anio; fN.value = st.niv || '';
-  fN.addEventListener('change', () => { st.niv = fN.value || null; if (st.niv) st.gse = null; render(false); });
+  fN.addEventListener('change', () => { st.niv = fN.value || null; if (st.niv) { st.gse = null; st.rf = null; } render(false); });
+  document.addEventListener('change', e => {
+    if (e.target.id !== 'fRend') return;
+    const v = e.target.value;
+    if (!v) { st.gse = null; st.rf = null; fN.value = st.niv || ''; render(false); }
+    else if (v.startsWith('g:')) { st.gse = null; filtrarGse(v.slice(2)); }
+    else { st.rf = null; filtrarRend(v); }
+  });
   fC.addEventListener('change', () => { st.car = fC.value; render(false); });
   fA.addEventListener('change', () => { st.anio = +fA.value; st.sem = null; render(false); });
 
@@ -715,12 +959,17 @@
     if (gs) { filtrarGse(gs.dataset.gse); return; }
     const nv = e.target.closest('[data-niv]');
     if (nv) { filtrarNivel(nv.dataset.niv); return; }
+    const rf = e.target.closest('[data-rf]');
+    if (rf) { filtrarRend(rf.dataset.rf); return; }
+    const cs = e.target.closest('[data-carsel]');
+    if (cs) { st.car = cs.dataset.carsel; fC.value = st.car; render(false); return; }
     const qu = e.target.closest('[data-quitar]');
     if (qu) {
       const k = qu.dataset.quitar;
       if (k === 'sem' || k === 'todo') st.sem = null;
       if (k === 'gse' || k === 'todo') st.gse = null;
       if (k === 'niv' || k === 'todo') st.niv = null;
+      if (k === 'rf' || k === 'todo') st.rf = null;
       fN.value = st.niv || '';
       render(false);
     }

@@ -16,6 +16,64 @@
  *   metas       metas distintas por carrera: { ENF: 80, NUT: 75 } (opcional)
  */
 window.FACS_INDICADORES = {
+  /* ---------------- Vista 1 · Estudiantes: rendimiento académico ---------------- */
+  rend_est: {
+    vista: "rendimiento", dimension: "Estudiantes", nombre: "Estudiantes con asignaturas",
+    definicion: "Estudiantes únicos con al menos una asignatura registrada en el periodo.",
+    formula: "Número de estudiantes únicos con registros asignatura-estudiante",
+    unidad: "N.º", sentido: "info", frecuencia: "Semestral", fuente: "SGA · Registro académico",
+    responsable: "Dirección de carrera", meta: null, lineaBase: null, tolerancia: 10, umbral: 0.05
+  },
+  rend_aprob: {
+    vista: "rendimiento", dimension: "Estudiantes", nombre: "Aprobación",
+    definicion: "Porcentaje de las evaluaciones válidas del periodo (estado final aprobado o reprobado) que terminan aprobadas. No incluye asignaturas en curso ni en recuperación.",
+    formula: "(Evaluaciones aprobadas / evaluaciones válidas) × 100",
+    unidad: "%", sentido: "mayor", frecuencia: "Semestral", fuente: "SGA · Registro académico",
+    responsable: "Dirección de carrera", meta: null, lineaBase: null, tolerancia: 5, umbral: 1
+  },
+  rend_reprob: {
+    vista: "rendimiento", dimension: "Estudiantes", nombre: "Reprobación",
+    definicion: "Porcentaje de las evaluaciones válidas del periodo que terminan reprobadas.",
+    formula: "(Evaluaciones reprobadas / evaluaciones válidas) × 100",
+    unidad: "%", sentido: "menor", frecuencia: "Semestral", fuente: "SGA · Registro académico",
+    responsable: "Dirección de carrera", meta: null, lineaBase: null, tolerancia: 2, umbral: 1
+  },
+  rend_nota: {
+    vista: "rendimiento", dimension: "Estudiantes", nombre: "Nota promedio",
+    definicion: "Promedio de las notas finales válidas (de 1 a 100) de las asignaturas del periodo. La nota mínima de aprobación es 70.",
+    formula: "Suma de notas finales válidas / número de notas válidas",
+    unidad: "", sentido: "mayor", frecuencia: "Semestral", fuente: "SGA · Registro académico",
+    responsable: "Dirección de carrera", meta: null, lineaBase: null, tolerancia: 2, umbral: 0.01
+  },
+  rend_asist: {
+    vista: "rendimiento", dimension: "Estudiantes", nombre: "Asistencia promedio",
+    definicion: "Promedio del porcentaje de asistencia final registrado en las asignaturas del periodo. El umbral institucional es 70 %.",
+    formula: "Suma de porcentajes de asistencia válidos / número de registros con asistencia",
+    unidad: "%", sentido: "mayor", frecuencia: "Semestral", fuente: "SGA · Registro académico",
+    responsable: "Dirección de carrera", meta: null, lineaBase: null, tolerancia: 5, umbral: 1
+  },
+  rend_exc: {
+    vista: "rendimiento", dimension: "Estudiantes", nombre: "Excelente + Muy Bueno",
+    definicion: "Porcentaje de evaluaciones con nota de 90 o más: las categorías Muy Bueno y Excelente de la escala institucional (Art. 75).",
+    formula: "(Evaluaciones Muy Bueno y Excelente / evaluaciones válidas) × 100",
+    unidad: "%", sentido: "mayor", frecuencia: "Semestral", fuente: "SGA · Registro académico",
+    responsable: "Dirección de carrera", meta: null, lineaBase: null, tolerancia: 5, umbral: 1
+  },
+  rend_rep: {
+    vista: "rendimiento", dimension: "Estudiantes", nombre: "Estudiantes repetidores",
+    definicion: "Porcentaje de estudiantes que cursan al menos una asignatura en segunda matrícula o posterior, sobre los estudiantes con número de matrícula conocido.",
+    formula: "(Estudiantes con alguna matrícula ≥ 2 / estudiantes con matrícula conocida) × 100",
+    unidad: "%", sentido: "menor", frecuencia: "Semestral", fuente: "SGA · Registro académico",
+    responsable: "Dirección de carrera", meta: null, lineaBase: null, tolerancia: 2, umbral: 1
+  },
+  rend_aband: {
+    vista: "rendimiento", dimension: "Estudiantes", nombre: "Abandono de asignatura",
+    definicion: "Porcentaje de registros con nota final 0, que se interpretan como asignatura no cursada o abandonada.",
+    formula: "(Registros con nota final 0 / registros evaluados) × 100",
+    unidad: "%", sentido: "menor", frecuencia: "Semestral", fuente: "SGA · Registro académico",
+    responsable: "Dirección de carrera", meta: null, lineaBase: null, tolerancia: 1, umbral: 0.5
+  },
+
   /* ---------------- Vista 3 · Grupos de interés ---------------- */
   sat_est: {
     vista: "grupos", dimension: "Grupos de interés", nombre: "Satisfacción estudiantil",
