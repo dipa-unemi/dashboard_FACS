@@ -553,7 +553,7 @@
   function insVinc() {
     const out = [], c = st.car;
     const p = medir('vin_proy', c).cur, b = medir('vin_benef', c).cur, a = medir('vin_avance', c).cur, u = medir('vin_culm', c).cur;
-    if (p) out.push(`En ${esc(p.l)} iniciaron ${B(num(p.v) + ' proyectos')} de vinculación` + (b ? `, que se propusieron atender a ${B(num(b.v) + ' personas')} de forma directa.` : '.'));
+    if (p) out.push(`En ${esc(p.l.replace(' (parcial)', ''))}${p.parcial ? ', con el año todavía en curso,' : ''} iniciaron ${B(num(p.v) + ' proyectos')} de vinculación` + (b ? `, que se propusieron atender a ${B(num(b.v) + ' personas')} de forma directa.` : '.'));
     if (a) out.push(`Los proyectos que terminaron reportan, en promedio, ${B(fmt('vin_avance', a.v))} de cumplimiento de lo planificado (${esc(baseTxt('vin_avance', a))}, iniciados en ${esc(a.l)}).`);
     if (u) out.push(`${B(fmt('vin_culm', u.v))} de los estudiantes que cerraron su participación la culminó.`);
     return out;
