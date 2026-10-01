@@ -1,0 +1,24 @@
+# Datos fuente: este repositorio es PUBLICO. Los Excel de origen (microdatos de
+# estudiantes, docentes y graduados) nunca se suben, esten donde esten. Si alguno
+# entra por error, borrarlo en un commit nuevo NO basta: queda en el historial.
+*.xlsx
+*.xls
+*.csv
+*.pkl
+*.parquet
+/data/
+/build/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Sistema y temporales
+Thumbs.db
+desktop.ini
+.DS_Store
+~$*
+*.tmp
+.env
