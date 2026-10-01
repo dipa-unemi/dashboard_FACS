@@ -468,7 +468,7 @@
     }
     const sg = medir('sat_grad', c);
     if (sg.cur) out.push(`${B(fmt('sat_grad', sg.cur.v))} de los graduados consultados en ${esc(sg.cur.l)} se declara satisfecho con los estudios realizados` +
-      (sg.cur.n < 10 ? ` (solo ${num(sg.cur.n)} respuestas: conviene leerlo con cautela)` : '') + '.');
+      (sg.cur.n < 10 ? ` (solo ${num(sg.cur.n)} ${sg.cur.n === 1 ? 'graduado ha respondido' : 'graduados han respondido'} en ${esc(sg.cur.l)}; con tan pocas respuestas, una sola persona cambia el resultado en ${num(100 / sg.cur.n)} puntos)` : '') + '.');
     const sd = medir('sat_doc', c), dd = ultimoDet(D.det.sat_doc[c]);
     if (sd.cur && dd && dd.rows.length > 1) {
       const lo = dd.rows[dd.rows.length - 1];
