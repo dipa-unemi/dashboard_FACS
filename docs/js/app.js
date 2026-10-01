@@ -531,15 +531,23 @@
     if (pe.cur && pe.prev) out.push(`La coautoría con estudiantes ${pe.cur.v >= pe.prev.v ? 'crece' : 'cae'} a ${B(fmt('pub_est', pe.cur.v))} de los artículos (${fmt('pub_est', pe.prev.v)} en ${esc(pe.prev.l.replace(' (parcial)', ''))}).`);
     return out;
   }
+  let cuTodos = true;
   function vInvest() {
     const c = st.car, ids = ['pub_total', 'doc_prod', 'pub_alto', 'pub_q12', 'pub_est'];
     const NIV = [['Científico (Scopus / WoS)', '#1c3247'], ['Regional (Latindex)', '#4597bf'], ['Divulgativo y memorias', '#f7964d']];
     const xs = serie('pub_total', c).filter(p => p.a <= st.anio).map(p => ({ p: p.p, l: p.l, a: p.a, parcial: p.parcial,
       segs: NIV.map(([k, col]) => ({ k, v: (D.det.pub_nivel[c][p.p] || {})[k] || 0, color: col })) }));
     const leg = '<div class="legend">' + NIV.map(([k, col]) => `<span><i class="box" style="background:${col}"></i>${esc(k)}</span>`).join('') + '</div>';
-    const cu = ultimoDet(D.det.pub_cuartil[c]);
-    const cuRows = cu ? ['Q1', 'Q2', 'Q3', 'Q4'].map((k, i) => ({ a: k + (i === 0 ? ' · mayor impacto' : i === 3 ? ' · menor impacto' : ''), v: cu.rows[k], color: ['#1c3247', '#335f7f', '#3c7aa0', '#4597bf'][i] })) : [];
-    const proy = medir('pub_proy', c).cur;
+    // Los artículos se suman entre años (cada uno cuenta en un solo año): «Hasta» acumula, «Solo» muestra el último año.
+    const cuKs = Object.keys(D.det.pub_cuartil[c] || {}).filter(dentroP).sort();
+    const cuSel = cuTodos ? cuKs : cuKs.slice(-1), cuUlt = cuKs[cuKs.length - 1];
+    const sumaAnios = id => serie(id, c).filter(p => cuSel.includes(p.p)).reduce((s, p) => s + (p.v || 0), 0);
+    const cuQ = q => cuSel.reduce((s, k) => s + (D.det.pub_cuartil[c][k][q] || 0), 0);
+    const cuRows = cuSel.length ? ['Q1', 'Q2', 'Q3', 'Q4'].map((k, i) => ({ a: k + (i === 0 ? ' · mayor impacto' : i === 3 ? ' · menor impacto' : ''), v: cuQ(k), color: ['#1c3247', '#335f7f', '#3c7aa0', '#4597bf'][i] })) : [];
+    const cuTot = cuRows.reduce((s, r) => s + r.v, 0), artTot = sumaAnios('pub_total'), proyTot = sumaAnios('pub_proy');
+    const enCurso = cuUlt == D.anioActual ? (cuSel.length > 1 ? ` (${cuUlt} en curso)` : ' (en curso)') : '';
+    const cuRango = cuSel.length > 1 ? `${cuSel[0]} – ${cuUlt}` : cuUlt;
+    const cuSeg = `<div class="segbtns"><button type="button" class="segbtn ${cuTodos ? 'on' : ''}" data-cu="1">Hasta ${cuUlt}</button><button type="button" class="segbtn ${!cuTodos ? 'on' : ''}" data-cu="0">Solo ${cuUlt}</button></div>`;
     return `<div class="kpis">${ids.map(id => kpi(id)).join('')}</div>` + lectura(insInvest()) +
       `<div class="grid2 wl">` +
       panel('Artículos publicados por año y nivel de la revista', 'pub_total', slot(el => columnChart(el, { xs, legend: leg })), 'Artículos únicos, aprobados por la universidad') +
@@ -547,8 +555,12 @@
       `</div><div class="grid3">` +
       panel('Revistas de impacto mundial', 'pub_alto', slot(el => lineChart(el, 'pub_alto', { h: 200 })), 'Porcentaje de artículos en Scopus o Web of Science') +
       panel('Coautoría con estudiantes', 'pub_est', slot(el => lineChart(el, 'pub_est', { h: 200 })), 'Porcentaje de artículos con al menos un estudiante coautor') +
-      panel('Cuartil de las revistas indexadas', 'pub_q12', cu ? hbars(cuRows, { fmt: v => num(v) + ' art.', tip: r => `${r.a}: ${num(r.v)} artículos en ${cu.k}` }) +
-        `<p class="ph-note" style="margin:12px 0 0">Año ${esc(cu.k)}${cu.k == D.anioActual ? ' (en curso)' : ''}. ${proy ? `${B(num(proy.v))} artículos del año provienen de proyectos de investigación.` : ''}</p>` : '', 'Solo los artículos con cuartil asignado') +
+      (cuSel.length ? `<div class="panel"><div class="ph"><h3>Cuartil de las revistas indexadas</h3>${info('pub_q12')}<span style="flex:1"></span>${cuSeg}</div>` +
+        `<p class="ph-note">Solo los artículos con cuartil asignado · ${cuSel.length > 1 ? 'años' : 'año'} ${esc(cuRango)}${enCurso}</p>` +
+        hbars(cuRows, { fmt: v => num(v) + ' art.', tip: r => `${r.a}: ${num(r.v)} artículos en ${cuRango}` }) +
+        `<p class="ph-note" style="margin:12px 0 0">${B(num(artTot))} artículos publicados${cuSel.length > 1 ? ` entre ${cuSel[0]} y ${cuUlt}` : ` en ${cuUlt}`}; ${B(num(cuTot))} en revistas con cuartil.` +
+        `${proyTot ? ` ${num(proyTot)} provienen de proyectos de investigación.` : ''}</p></div>`
+        : panel('Cuartil de las revistas indexadas', 'pub_q12', '', 'Solo los artículos con cuartil asignado')) +
       `</div>` + tabla(ids.concat('pub_proy'));
   }
 
@@ -709,6 +721,8 @@
     if (gr) { grupoDet = gr.dataset.grupo; render(false); return; }
     const vi = e.target.closest('[data-vin]');
     if (vi) { vinTodos = vi.dataset.vin === '1'; render(false); return; }
+    const cq = e.target.closest('[data-cu]');
+    if (cq) { cuTodos = cq.dataset.cu === '1'; render(false); return; }
     const ca = e.target.closest('.legend [data-car]');
     if (ca) { filtrarCarrera(ca.dataset.car); return; }
     const gs = e.target.closest('[data-gse]');
