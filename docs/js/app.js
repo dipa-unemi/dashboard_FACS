@@ -6,6 +6,11 @@
  * Regla de periodo: cada indicador se muestra en su periodicidad real. La tarjeta
  * toma la última medición disponible hasta el año elegido y la compara con la
  * medición inmediatamente anterior; no se inventan valores para años sin medición.
+ *
+ * Filtro cruzado: pulsar un punto o una barra de un periodo filtra todo el
+ * tablero a ese periodo; pulsar una carrera (leyenda o etiqueta) cambia la
+ * carrera; pulsar un nivel socioeconómico recalcula los indicadores de
+ * estudiantes para ese nivel. Lo que no tiene ese desglose lo dice en su tarjeta.
  */
 (function () {
   'use strict';
@@ -31,11 +36,7 @@
   const VISTAS = [
     { id: 'inicio', num: '', nom: 'Vista general', obj: 'Lectura ejecutiva de los indicadores estratégicos de la carrera.' },
     { sep: true },
-    { id: 'estudiantes', num: '1', nom: 'Estudiantes', off: true },
-    { id: 'aprendizaje', num: '2', nom: 'Resultados de aprendizaje', off: true },
     { id: 'grupos', num: '3', nom: 'Grupos de interés', obj: 'Percepción de estudiantes, graduados y docentes sobre la carrera.' },
-    { id: 'docentes', num: '4', nom: 'Cuerpo docente', off: true },
-    { id: 'planificacion', num: '5', nom: 'Planificación estratégica', off: true },
     { id: 'investigacion', num: '6', nom: 'Investigación y actividad académica', obj: 'Producción científica del cuerpo docente: cuánto se publica, dónde y con quién.' },
     { id: 'vinculacion', num: '7', nom: 'Vinculación e impacto', obj: 'Actividad, cobertura y resultados de los proyectos de vinculación con la sociedad.' },
     { id: 'apoyo', num: '8', nom: 'Servicios de apoyo', obj: 'Acceso, cobertura y percepción de los servicios que acompañan la trayectoria del estudiante.' }
@@ -44,7 +45,12 @@
   /* ------------------------------------------------------------ estado */
   const anios = [];
   for (let a = 2021; a <= D.anioActual; a++) anios.push(a);
-  const st = { car: 'FACS', anio: D.anioActual, vista: 'inicio', foco: null };
+  const st = { car: 'FACS', anio: D.anioActual, vista: 'inicio', foco: null, sem: null, gse: null };
+  /* Indicadores de estudiantes: los únicos que se pueden desglosar por nivel socioeconómico. */
+  const GSE_IND = new Set(['sat_est', 'sat_serv', 'tut_cob', 'tut_ejec', 'tut_int', 'beca_cob']);
+  const GSE_DET = new Set(['sat_est', 'sat_serv', 'beca_tipo']);
+  const GSE_NOM = { 'BAJO': 'Bajo', 'MEDIO BAJO': 'Medio bajo', 'MEDIO TÍPICO': 'Medio típico', 'MEDIO ALTO': 'Medio alto', 'ALTO': 'Alto' };
+  const GSE_ORD = Object.keys(GSE_NOM);
 
   /* ------------------------------------------------------------ formato */
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -69,8 +75,18 @@
   function ordenP(p) { if (/^\d{4}$/.test(p)) return +p * 10; const [s, a] = p.split('-'); return +a * 10 + +s[0]; }
 
   /* ------------------------------------------------------------ datos */
-  const serie = (id, car) => (D.ind[id] && D.ind[id][car]) || [];
-  const hasta = (id, car) => serie(id, car).filter(p => p.a <= st.anio);
+  const conGse = (id, car) => st.gse && GSE_IND.has(id) ? car + '|' + st.gse : car;
+  const serie = (id, car) => (D.ind[id] && D.ind[id][conGse(id, car)]) || [];
+  const detDe = (nombre, car) => (D.det[nombre] || {})[st.gse && GSE_DET.has(nombre) ? car + '|' + st.gse : car];
+  const esAnual = p => /^\d{4}$/.test(p);
+  const anioCorte = () => st.sem ? +st.sem.slice(-4) : st.anio;
+  /* Corte temporal: hasta el semestre pulsado, o hasta el año elegido. */
+  const dentroP = p => esAnual(p) ? +p <= anioCorte() : (st.sem ? ordenP(p) <= ordenP(st.sem) : +p.slice(-4) <= st.anio);
+  const dentro = pt => dentroP(pt.p);
+  const esSel = x => st.sem ? (x.p === st.sem || (esAnual(x.p) && x.a === anioCorte())) : x.a === st.anio;
+  const hasta = (id, car) => serie(id, car).filter(dentro);
+  const hayMeta = id => metaDe(id, st.car) != null && CAT[id].sentido !== 'info';
+  const etiquetaCorte = () => st.sem ? lblDe(st.sem) : 'hasta ' + st.anio;
   function medir(id, car) {
     const pts = hasta(id, car).filter(p => p.v != null);
     return { cur: pts[pts.length - 1] || null, prev: pts[pts.length - 2] || null, pts };
@@ -125,7 +141,7 @@
       case 'tut_int': return `${num(n)} estudiantes atendidos`;
       case 'vin_avance': return `${num(n)} proyecto${n === 1 ? '' : 's'} terminado${n === 1 ? '' : 's'}`;
       case 'vin_culm': return `${num(n)} participaciones cerradas`;
-      default: return p.parcial ? 'Año en curso' : '';
+      default: return '';
     }
   }
 
@@ -184,7 +200,7 @@
       { car: 'FACS', name: 'Facultad', color: GRIS, w: 1.5, dash: '5 4', pts: hasta(id, 'FACS') }];
   }
   function leyenda(ss) {
-    return '<div class="legend">' + ss.map(s => `<span><i class="${s.dash ? 'dash' : ''}" style="border-color:${s.color}"></i>${esc(s.name)}</span>`).join('') + '</div>';
+    return '<div class="legend">' + ss.map(s => `<span data-car="${s.car}" data-tip="Clic para ver solo ${esc(NOM[s.car].toLowerCase())}"><i class="${s.dash ? 'dash' : ''}" style="border-color:${s.color}"></i>${esc(s.name)}</span>`).join('') + '</div>';
   }
 
   /* ---------- gráfico de líneas con cruz de lectura ---------- */
@@ -195,20 +211,21 @@
     ss.forEach(s => s.pts.forEach(p => { if (!xsMap.has(p.p)) xsMap.set(p.p, p); }));
     const xs = [...xsMap.values()].sort((a, b) => ordenP(a.p) - ordenP(b.p));
     if (!xs.length || ss.every(s => s.pts.every(p => p.v == null))) {
-      el.innerHTML = `<div class="empty"><b>Sin medición hasta ${st.anio}</b>Este indicador todavía no tiene resultados para el periodo elegido.</div>`; return;
+      el.innerHTML = `<div class="empty"><b>Sin medición ${esc(etiquetaCorte())}</b>Este indicador todavía no tiene resultados para el periodo elegido.</div>`; return;
     }
     const W = Math.max(300, el.clientWidth || 640), H = opt.h || 215, ml = 40, mr = W < 420 ? 84 : 98, mt = 14, mb = 26, iw = W - ml - mr, ih = H - mt - mb;
     const n = xs.length, step = n > 1 ? iw / (n - 1) : iw;
     const X = i => ml + (n === 1 ? iw / 2 : i * step);
     const pct = unidad(id) === '%';
     let vmax = 0; ss.forEach(s => s.pts.forEach(p => { if (p.v != null) vmax = Math.max(vmax, p.v); }));
-    const ymax = pct ? 100 : niceMax(vmax * 1.1);
+    // Porcentajes bajos (becas ~15 %) se leerían aplastados en 0-100: la escala se ajusta, siempre desde 0.
+    const ymax = pct && vmax > 60 ? 100 : niceMax(vmax * (pct ? 1.25 : 1.1));
     const Y = v => mt + ih - (v / ymax) * ih;
     let g = '';
-    const tks = pct ? [0, 25, 50, 75, 100] : [0, ymax / 4, ymax / 2, ymax * 3 / 4, ymax];
+    const tks = [0, ymax / 4, ymax / 2, ymax * 3 / 4, ymax];
     tks.forEach(t => {
       g += `<line x1="${ml}" x2="${W - mr + 10}" y1="${Y(t)}" y2="${Y(t)}" stroke="#e6ecf0" stroke-width="1"/>` +
-        `<text x="${ml - 7}" y="${Y(t) + 3.5}" text-anchor="end" font-size="10.5" fill="#6f8596">${num(t, 0)}${pct ? '%' : ''}</text>`;
+        `<text x="${ml - 7}" y="${Y(t) + 3.5}" text-anchor="end" font-size="10.5" fill="#6f8596">${num(t, t % 1 ? 1 : 0)}${pct ? '%' : ''}</text>`;
     });
     const meta = metaDe(id, st.car);
     if (meta != null && !Array.isArray(meta) && meta <= ymax)
@@ -216,8 +233,10 @@
         `<text x="${W - mr + 12}" y="${Y(meta) + 3.5}" font-size="10.5" fill="#b86200" font-weight="700">Meta ${esc(fmt(id, meta))}</text>`;
     const cada = n > 8 ? 2 : 1;
     xs.forEach((x, i) => {
-      if (x.a === st.anio) g += `<rect x="${X(i) - Math.min(step, 60) / 2}" y="${mt - 6}" width="${Math.min(step, 60)}" height="${ih + 6}" fill="#fde7cc" opacity=".55" rx="4"/>`;
-      if (i % cada === 0 || i === n - 1) g += `<text x="${X(i)}" y="${H - 7}" text-anchor="middle" font-size="10.5" fill="${x.a === st.anio ? '#1c3247' : '#6f8596'}" font-weight="${x.a === st.anio ? 700 : 400}">${esc(tick(x.p))}</text>`;
+      const sel = esSel(x);
+      if (sel) g += `<rect x="${X(i) - Math.min(step, 60) / 2}" y="${mt - 6}" width="${Math.min(step, 60)}" height="${ih + 6}" fill="#fde7cc" opacity=".55" rx="4"/>`;
+      const vecinoSel = cada > 1 && !sel && ((xs[i - 1] && esSel(xs[i - 1])) || (xs[i + 1] && esSel(xs[i + 1])));
+      if (sel || ((i % cada === 0 || i === n - 1) && !vecinoSel)) g += `<text x="${X(i)}" y="${H - 7}" text-anchor="middle" font-size="10.5" fill="${sel ? '#1c3247' : '#6f8596'}" font-weight="${sel ? 700 : 400}">${esc(tick(x.p))}</text>`;
     });
     const labels = [];
     ss.slice().reverse().forEach(s => {
@@ -238,11 +257,12 @@
     if (exceso > 0) labels.forEach(L => { L.y -= exceso; });
     for (let k = labels.length - 2; k >= 0; k--) if (labels[k + 1].y - labels[k].y < 26) labels[k].y = labels[k + 1].y - 26;
     labels.forEach(L => {
-      g += `<text x="${L.x + 9}" y="${L.y - 1}" font-size="12.5" font-weight="700" fill="#1c3247">${esc(fmt(id, L.p.v))}</text>` +
-        `<text x="${L.x + 9}" y="${L.y + 11}" font-size="10.5" fill="#6f8596">${esc(L.s.name)}</text>`;
+      g += `<g class="lbl-car" data-car="${L.s.car}"><rect x="${L.x + 5}" y="${L.y - 13}" width="80" height="28" fill="transparent"/>` +
+        `<text x="${L.x + 9}" y="${L.y - 1}" font-size="12.5" font-weight="700" fill="#1c3247">${esc(fmt(id, L.p.v))}</text>` +
+        `<text x="${L.x + 9}" y="${L.y + 11}" font-size="10.5" fill="#6f8596">${esc(L.s.name)}</text></g>`;
     });
     g += `<line class="xh" x1="0" x2="0" y1="${mt - 4}" y2="${mt + ih}" stroke="#1c3247" stroke-width="1" opacity="0"/>` +
-      `<rect class="hit" x="${ml - 20}" y="0" width="${iw + 40}" height="${H}" fill="transparent"/>`;
+      `<rect class="hit" x="${ml - 20}" y="0" width="${iw + 40}" height="${H}" fill="transparent" style="cursor:pointer"/>`;
     el.innerHTML = (ss.length > 1 ? leyenda(ss) : '') + svgEl(W, H, g);
     const svg = el.querySelector('svg'), xh = svg.querySelector('.xh');
     svg.querySelector('.hit').addEventListener('pointermove', e => {
@@ -261,9 +281,17 @@
           if (p.parcial) notas.push('Año en curso: aún puede crecer');
         }
       });
-      if (notas.length) h += `<div class="nota">${notas.map(esc).join('<br>')}</div>`;
+      notas.push('Clic: filtrar todo el tablero a ' + (esAnual(x.p) ? x.p : x.l));
+      h += `<div class="nota">${notas.map(esc).join('<br>')}</div>`;
       tipShow(h, e.clientX, e.clientY);
     });
+    svg.querySelector('.hit').addEventListener('click', e => {
+      const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+      const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+      const i = Math.max(0, Math.min(n - 1, Math.round(n === 1 ? 0 : (loc.x - ml) / step)));
+      filtrarPeriodo(xs[i].p);
+    });
+    svg.querySelectorAll('.lbl-car').forEach(gc => gc.addEventListener('click', ev => { ev.stopPropagation(); filtrarCarrera(gc.dataset.car); }));
     svg.querySelector('.hit').addEventListener('pointerleave', () => { xh.setAttribute('opacity', 0); tipHide(); });
   }
 
@@ -282,7 +310,7 @@
         `<text x="${ml - 7}" y="${Y(t) + 3.5}" text-anchor="end" font-size="10.5" fill="#6f8596">${num(t, 0)}</text>`;
     });
     xs.forEach((x, i) => {
-      const cx = ml + step * i + step / 2, sel = x.a === st.anio;
+      const cx = ml + step * i + step / 2, sel = esSel(x);
       if (sel) g += `<rect x="${cx - Math.min(step, bw + 22) / 2}" y="${mt - 18}" width="${Math.min(step, bw + 22)}" height="${ih + 18}" fill="#fde7cc" opacity=".55" rx="4"/>`;
       let y0 = Y(0);
       const ultimo = x.segs.map(z => !!z.v).lastIndexOf(true);
@@ -305,10 +333,12 @@
         x.segs.slice().reverse().forEach(z => { if (z.v != null) h += `<div class="r"><i style="border-color:${z.color}"></i><b>${esc(opt.fmt ? opt.fmt(z.v) : num(z.v))}</b><span>${esc(z.k)}</span></div>`; });
         if (x.segs.length > 1) h += `<div class="nota">Total: ${num(tot[+r.dataset.i])}</div>`;
         if (x.nota) h += `<div class="nota">${esc(x.nota)}</div>`;
+        h += `<div class="nota">Clic: filtrar todo el tablero a ${esc(x.p)}</div>`;
         tipShow(h, e.clientX, e.clientY);
         r.style.filter = 'brightness(1.08)'; void q;
       });
       r.addEventListener('pointerleave', () => { tipHide(); r.style.filter = ''; });
+      r.addEventListener('click', () => filtrarPeriodo(xs[+r.dataset.i].p));
     });
   }
 
@@ -324,9 +354,13 @@
         const cls = Math.abs(dd) < 1 ? 'neu' : dd > 0 ? 'fav' : 'desf';
         d = `<span class="trend d ${cls}" style="margin-left:6px">${Math.abs(dd) < 1 ? '→' : dd > 0 ? '↑' : '↓'} ${num(Math.abs(dd), 1)} pp</span>`;
       }
-      const t = (o.tip ? o.tip(r) : '') || `${r.a}: ${o.fmt ? o.fmt(r.v) : num(r.v, 1) + ' %'}`;
-      return `<div class="hrow" data-tip="${esc(t)}"><span class="hl">${esc(r.a)}</span>` +
-        `<span class="hv">${esc(o.fmt ? o.fmt(r.v) : num(r.v, 1) + ' %')}${d}</span>` +
+      let t = (o.tip ? o.tip(r) : '') || `${r.a}: ${o.fmt ? o.fmt(r.v) : num(r.v, 1) + ' %'}`;
+      const pulsable = r.gse ? ` data-gse="${esc(r.gse)}"` : '';
+      if (r.gse) t += st.gse === r.gse ? '\nClic: quitar este filtro' : '\nClic: filtrar el tablero a este nivel';
+      const clase = 'hrow' + (r.gse && st.gse ? (st.gse === r.gse ? ' sel' : ' mut') : '');
+      const valor = r.v == null ? (o.vacio || '—') : (o.fmt ? o.fmt(r.v) : num(r.v, 1) + ' %');
+      return `<div class="${clase}"${pulsable} data-tip="${esc(t)}"><span class="hl">${esc(r.a)}</span>` +
+        `<span class="hv">${esc(valor)}${d}</span>` +
         `<span class="ht"><span class="hf" style="width:${Math.max(0, Math.min(100, (r.v || 0) / max * 100))}%;background:${r.color || o.color || COL[st.car]}"></span>` +
         (o.ref != null ? `<span class="hg" style="left:${o.ref / max * 100}%"></span>` : '') + '</span></div>';
     }).join('') + '</div>';
@@ -348,30 +382,34 @@
     const tag = o.link ? 'button type="button"' : 'div';
     const attrs = o.link ? ` data-go="${c.vista}" data-foco="${id}"` : '';
     const lbl = `<div class="top"><span class="lbl">${c.tipo ? `<span style="color:var(--acento)">${esc(c.tipo)} · </span>` : ''}${esc(c.nombre)}</span>${info(id)}</div>`;
-    if (!cur) return `<${tag} class="kpi na" id="k-${id}"${attrs}>${lbl}<div class="val">Sin medición</div><div class="per">No hay resultados hasta ${st.anio}</div></${tag.split(' ')[0]}>`;
+    const sinGse = st.gse && !GSE_IND.has(id);
+    const cls = 'kpi' + (sinGse ? ' nogse' : '');
+    if (!cur) return `<${tag} class="${cls} na" id="k-${id}"${attrs}>${lbl}<div class="val">Sin medición</div><div class="per">No hay resultados ${esc(etiquetaCorte())}</div></${tag.split(' ')[0]}>`;
     const t = tendencia(id, cur, m.prev), e = estado(id, st.car, cur.v);
-    return `<${tag} class="kpi" id="k-${id}"${attrs}>${lbl}` +
+    const base = sinGse ? 'Sin desglose por nivel socioeconómico: muestra a toda la población' : baseTxt(id, cur);
+    return `<${tag} class="${cls}" id="k-${id}"${attrs}>${lbl}` +
       `<div class="mid"><div><div class="val">${valHTML(id, cur.v)}</div><div class="per">${esc(cur.l)}${m.prev ? ' · antes ' + esc(fmt(id, m.prev.v)) : ''}</div></div>${spark(id)}</div>` +
-      `<div class="base">${esc(baseTxt(id, cur))}</div>` +
-      `<div class="foot"><span class="meta">Meta: <b>${esc(metaTxt(id, st.car))}</b></span>${t.html}${e.html}</div></${tag.split(' ')[0]}>`;
+      `<div class="base">${esc(base)}</div>` +
+      `<div class="foot">${hayMeta(id) ? `<span class="meta">Meta: <b>${esc(metaTxt(id, st.car))}</b></span>` : `<span class="meta">vs. anterior</span>`}${t.html}${hayMeta(id) ? e.html : ''}</div></${tag.split(' ')[0]}>`;
   }
 
   /* ---------- tabla de resultados (Meta | Resultado | Anterior | Tendencia | Estado) ---------- */
   function tabla(ids) {
+    const conBase = ids.some(id => CAT[id].lineaBase != null), conMeta = ids.some(hayMeta);
     const filas = ids.map(id => {
       const c = CAT[id], m = medir(id, st.car), cur = m.cur, prev = m.prev;
       const t = tendencia(id, cur, prev), e = estado(id, st.car, cur && cur.v);
       return `<tr class="${st.foco === id ? 'hl' : ''}"><td><div class="ind">${esc(c.nombre)}</div>${c.tipo ? `<div class="tipo">${esc(c.tipo)}</div>` : ''}</td>` +
         `<td class="per">${cur ? esc(cur.l) : '—'}</td>` +
-        `<td class="n">${c.lineaBase == null ? '<span class="per">Por definir</span>' : esc(fmt(id, c.lineaBase))}</td>` +
-        `<td class="n">${metaDe(id, st.car) == null ? '<span class="per">Por definir</span>' : esc(metaTxt(id, st.car))}</td>` +
+        (conBase ? `<td class="n">${c.lineaBase == null ? '—' : esc(fmt(id, c.lineaBase))}</td>` : '') +
+        (conMeta ? `<td class="n">${hayMeta(id) ? esc(metaTxt(id, st.car)) : '—'}</td>` : '') +
         `<td class="n"><b>${cur ? esc(fmt(id, cur.v)) : '—'}</b></td>` +
         `<td class="n">${prev ? esc(fmt(id, prev.v)) + ` <span class="per">(${esc(prev.l)})</span>` : '—'}</td>` +
-        `<td>${cur ? t.html : '—'}</td><td>${e.html}</td></tr>`;
+        `<td>${cur ? t.html : '—'}</td>${conMeta ? `<td>${hayMeta(id) ? e.html : '—'}</td>` : ''}</tr>`;
     }).join('');
     return `<div class="panel"><div class="ph"><h3>Resultados del periodo</h3></div>` +
-      `<p class="ph-note">Cada indicador en su última medición hasta ${st.anio}, frente a la medición anterior.</p>` +
-      `<div class="tbl-wrap"><table class="res"><thead><tr><th>Indicador</th><th>Periodo</th><th class="n">Línea base</th><th class="n">Meta</th><th class="n">Resultado</th><th class="n">Anterior</th><th>Tendencia</th><th>Estado</th></tr></thead><tbody>${filas}</tbody></table></div></div>`;
+      `<p class="ph-note">Cada indicador en su última medición ${esc(etiquetaCorte())}, frente a la medición anterior.</p>` +
+      `<div class="tbl-wrap"><table class="res"><thead><tr><th>Indicador</th><th>Periodo</th>${conBase ? '<th class="n">Línea base</th>' : ''}${conMeta ? '<th class="n">Meta</th>' : ''}<th class="n">Resultado</th><th class="n">Anterior</th><th>Tendencia</th>${conMeta ? '<th>Estado</th>' : ''}</tr></thead><tbody>${filas}</tbody></table></div></div>`;
   }
 
   function lectura(items, titulo) {
@@ -380,13 +418,14 @@
     return `<div class="lectura"><h3><svg viewBox="0 0 24 24">${IC.idea}</svg>${esc(titulo || 'Lo que dicen los datos')}</h3><ul>${items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
   }
   const B = s => `<b>${esc(s)}</b>`;
+  const deGrupo = () => st.gse ? ` de nivel socioeconómico ${GSE_NOM[st.gse].toLowerCase()}` : '';
   const q = s => `«${esc(s)}»`;
   function panel(titulo, id, cuerpo, nota) {
     return `<div class="panel"><div class="ph"><h3>${esc(titulo)}</h3>${id ? info(id) : ''}</div>${nota ? `<p class="ph-note">${nota}</p>` : '<div style="height:8px"></div>'}${cuerpo}</div>`;
   }
   const ultimoDet = (obj, filtro) => { // detalle de la última medición <= año
     if (!obj) return null;
-    const ks = Object.keys(obj).filter(k => (/^\d{4}$/.test(k) ? +k : +k.slice(-4)) <= st.anio && (!filtro || filtro(k))).sort((a, b) => ordenP(a) - ordenP(b));
+    const ks = Object.keys(obj).filter(k => dentroP(k) && (!filtro || filtro(k))).sort((a, b) => ordenP(a) - ordenP(b));
     return ks.length ? { k: ks[ks.length - 1], prevK: ks[ks.length - 2], rows: obj[ks[ks.length - 1]], prev: ks.length > 1 ? obj[ks[ks.length - 2]] : null } : null;
   };
   const lblDe = p => { const x = D.periodos.find(z => z.p === p); return x ? x.l : p; };
@@ -411,14 +450,14 @@
     const out = [], c = st.car;
     const se = medir('sat_est', c);
     if (se.cur) {
-      let s = `La satisfacción estudiantil es ${B(fmt('sat_est', se.cur.v))} en ${esc(se.cur.l)}`;
+      let s = `La satisfacción de los estudiantes${deGrupo()} es ${B(fmt('sat_est', se.cur.v))} en ${esc(se.cur.l)}`;
       if (se.prev) {
         const t = tendencia('sat_est', se.cur, se.prev);
         s += t.dir ? `, ${t.dir > 0 ? 'sube' : 'baja'} ${B(num(Math.abs(t.d), 1) + ' pp')} frente a ${esc(se.prev.l)}` : `, estable frente a ${esc(se.prev.l)}`;
       }
       if (se.prev && se.prev.glob) s += ' (esa medición fue general, con otro cuestionario, así que la comparación es solo referencial)';
       out.push(s + '.');
-      const det = ultimoDet(D.det.sat_est[c]);
+      const det = ultimoDet(detDe('sat_est', c));
       if (det && det.rows.length > 1) {
         const lo = det.rows[det.rows.length - 1], hi = det.rows[0];
         out.push(`Lo mejor valorado por los estudiantes: ${q(hi.a)} (${num(hi.v, 1)} %). Lo que más pide atención: ${q(lo.a)} (${num(lo.v, 1)} %).`);
@@ -439,7 +478,7 @@
     const c = st.car, ids = ['sat_est', 'sat_grad', 'sat_doc'];
     let det = '';
     if (grupoDet === 'est') {
-      const d = ultimoDet(D.det.sat_est[c]), cur = medir('sat_est', c).cur;
+      const d = ultimoDet(detDe('sat_est', c)), cur = medir('sat_est', c).cur;
       det = d ? `<p class="ph-note">${esc(lblDe(d.k))}${d.prevK ? ' · la flecha compara con ' + esc(lblDe(d.prevK)) : ''}. La línea vertical marca el resultado global.</p>` +
         hbars(d.rows, { max: 100, prev: d.prev && mapa(d.prev), ref: cur && cur.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 · promedio ${num(r.media, 2)} de 5\n${num(r.n)} respuestas` }) : '<div class="empty"><b>Sin detalle por aspecto hasta ' + st.anio + '</b>La primera medición por aspecto es de agosto – diciembre 2025.</div>';
     } else if (grupoDet === 'grad') {
@@ -459,7 +498,16 @@
       panel('Estudiantes', 'sat_est', slot(el => lineChart(el, 'sat_est', { h: 230 })), notaEst || 'Valoraciones de 4 o 5, por semestre') +
       panel('Graduados', 'sat_grad', slot(el => lineChart(el, 'sat_grad', { h: 230 })), 'Satisfechos con sus estudios, por año de encuesta. Punto hueco: menos de 10 respuestas') +
       panel('Docentes', 'sat_doc', slot(el => lineChart(el, 'sat_doc', { h: 230 })), 'Valoraciones de 4 o 5. Hasta hoy existe una sola medición') +
-      `</div><div class="panel"><div class="ph"><h3>¿Qué se valora y qué no?</h3><span style="flex:1"></span><div class="segbtns">${seg}</div></div>${det}</div>` + tabla(ids);
+      `</div><div class="grid2 wl arriba"><div class="panel"><div class="ph"><h3>¿Qué se valora y qué no?</h3><span style="flex:1"></span><div class="segbtns">${seg}</div></div>${det}</div>` +
+      panelGse() + `</div>` + tabla(ids);
+  }
+
+  function panelGse() {
+    const cur = medir('sat_est', st.car).cur, d = cur && (D.det.sat_gse[st.car] || {})[cur.p];
+    const rows = d ? GSE_ORD.filter(g => d[g]).map(g => ({ a: GSE_NOM[g], gse: g, v: d[g].v, n: d[g].n })) : [];
+    return panel('Satisfacción estudiantil por nivel socioeconómico', 'sat_est',
+      hbars(rows, { max: 100, color: COL[st.car], tip: r => `Nivel ${r.a.toLowerCase()}: ${num(r.v, 1)} % de valoraciones de 4 o 5\n${num(r.n)} estudiantes encuestados` }),
+      cur ? `${esc(cur.l)} · pulsa un nivel para filtrar el tablero` : '');
   }
 
   /* ---------------- Vista 6 ---------------- */
@@ -508,16 +556,13 @@
     if (p) out.push(`En ${esc(p.l)} iniciaron ${B(num(p.v) + ' proyectos')} de vinculación` + (b ? `, que se propusieron atender a ${B(num(b.v) + ' personas')} de forma directa.` : '.'));
     if (a) out.push(`Los proyectos que terminaron reportan, en promedio, ${B(fmt('vin_avance', a.v))} de cumplimiento de lo planificado (${esc(baseTxt('vin_avance', a))}, iniciados en ${esc(a.l)}).`);
     if (u) out.push(`${B(fmt('vin_culm', u.v))} de los estudiantes que cerraron su participación la culminó.`);
-    out.push('El impacto en la comunidad todavía no se mide: los beneficiarios indican cuánta gente se planificó alcanzar, no qué cambió en ella.');
     return out;
   }
   let vinTodos = true;
   function vVinc() {
     const c = st.car, ids = ['vin_proy', 'vin_benef', 'vin_avance', 'vin_culm'];
-    const col = { xs: [], h: 210 };
     const xsP = serie('vin_proy', c).filter(p => p.a <= st.anio && p.a >= 2021).map(p => ({ p: p.p, l: p.l, a: p.a, segs: [{ k: 'Proyectos', v: p.v, color: COL[c] }] }));
     const xsB = serie('vin_benef', c).filter(p => p.a <= st.anio && p.a >= 2021).map(p => ({ p: p.p, l: p.l, a: p.a, segs: [{ k: 'Beneficiarios previstos', v: p.v, color: COL[c] }] }));
-    void col;
     const filas = (D.det.vin_proyectos[c] || []).filter(f => f.a <= st.anio && (vinTodos || f.a === st.anio));
     const carN = { ENF: 'Enfermería', NUT: 'Nutrición', 'ENF+NUT': 'Ambas' };
     const tablaP = filas.length ? `<div class="tbl-wrap" style="max-height:420px;overflow-y:auto"><table class="res"><thead><tr><th>Proyecto</th>${c === 'FACS' ? '<th>Carrera</th>' : ''}<th class="n">Inicio</th><th>Estado</th><th>Cumplimiento reportado</th><th class="n">Beneficiarios previstos</th><th class="n">Estudiantes</th></tr></thead><tbody>` +
@@ -527,9 +572,7 @@
         `<td class="n">${num(f.ben)}</td><td class="n">${num(f.est)}</td></tr>`).join('') + '</tbody></table></div>'
       : `<div class="empty"><b>No hay proyectos iniciados en ${st.anio}</b></div>`;
     const seg = `<div class="segbtns"><button type="button" class="segbtn ${vinTodos ? 'on' : ''}" data-vin="1">Hasta ${st.anio}</button><button type="button" class="segbtn ${!vinTodos ? 'on' : ''}" data-vin="0">Solo ${st.anio}</button></div>`;
-    const impacto = `<div class="kpi na"><div class="top"><span class="lbl"><span style="color:var(--acento)">Impacto · </span>Cambios medidos en la comunidad</span></div>` +
-      `<div class="val">Sin medición</div><div class="base" style="line-height:1.4">Requiere una evaluación de impacto con metodología y evidencia. Los beneficiarios miden cobertura, no impacto.</div></div>`;
-    return `<div class="kpis">${ids.map(id => kpi(id)).join('')}${impacto}</div>` + lectura(insVinc()) +
+    return `<div class="kpis">${ids.map(id => kpi(id)).join('')}</div>` + lectura(insVinc()) +
       `<div class="grid2">` +
       panel('Proyectos ejecutados por año de inicio', 'vin_proy', slot(el => columnChart(el, { xs: xsP, h: 205 }))) +
       panel('Beneficiarios directos previstos', 'vin_benef', slot(el => columnChart(el, { xs: xsB, h: 205 }))) +
@@ -542,12 +585,12 @@
   function insApoyo() {
     const out = [], c = st.car;
     const bc = medir('beca_cob', c).cur, g = ultimoDet(D.det.beca_gse[c], k => bc && k === bc.p);
-    if (bc && g && g.rows.BAJO) {
+    if (bc && g && g.rows.BAJO && !st.gse) {
       const v = g.rows.BAJO.v;
       out.push(`Las becas llegan al ${B(num(v, 1) + ' %')} de los estudiantes de nivel socioeconómico bajo: ${B(num(Math.round(10 - v / 10)) + ' de cada 10')} no recibe ayuda (${esc(bc.l)}).`);
-    } else if (bc) out.push(`${B(fmt('beca_cob', bc.v))} de los estudiantes recibe una beca o ayuda en ${esc(bc.l)}.`);
+    } else if (bc) out.push(`${B(fmt('beca_cob', bc.v))} de los estudiantes${deGrupo()} recibe una beca o ayuda en ${esc(bc.l)}.`);
     const tc = medir('tut_cob', c);
-    if (tc.cur) out.push(`${B(fmt('tut_cob', tc.cur.v))} de los matriculados asistió al menos a una tutoría en ${esc(tc.cur.l)}` +
+    if (tc.cur) out.push(`${B(fmt('tut_cob', tc.cur.v))} de los matriculados${deGrupo()} asistió al menos a una tutoría en ${esc(tc.cur.l)}` +
       (tc.prev ? ` (${fmt('tut_cob', tc.prev.v)} el semestre anterior).` : '.'));
     if (c === 'FACS') {
       const e = medir('tut_cob', 'ENF').cur, n = medir('tut_cob', 'NUT').cur;
@@ -558,7 +601,7 @@
       const mx = te.pts.reduce((a, b) => b.v > a.v ? b : a);
       if (mx.v - te.cur.v >= 8) out.push(`Se realiza el ${B(fmt('tut_ejec', te.cur.v))} de las tutorías agendadas, frente al ${fmt('tut_ejec', mx.v)} de ${esc(mx.l)}: las cancelaciones van en aumento.`);
     }
-    const ss = ultimoDet(D.det.sat_serv[c]);
+    const ss = ultimoDet(detDe('sat_serv', c));
     if (ss && ss.rows.length) { const lo = ss.rows[ss.rows.length - 1]; out.push(`El servicio peor valorado por los estudiantes es ${q(lo.a)} (${num(lo.v, 1)} %).`); }
     return out;
   }
@@ -567,18 +610,18 @@
     const bc = medir('beca_cob', c).cur;
     const g = bc ? ultimoDet(D.det.beca_gse[c], k => k === bc.p) : null;
     const ORD = ['BAJO', 'MEDIO BAJO', 'MEDIO TÍPICO', 'MEDIO ALTO', 'ALTO'];
-    const gRows = g ? ORD.filter(k => g.rows[k]).map(k => ({ a: k[0] + k.slice(1).toLowerCase(), v: g.rows[k].v, n: g.rows[k].n })) : [];
-    const tp = bc ? (D.det.beca_tipo[c] || {})[bc.p] : null;
-    const tRows = tp ? Object.entries(tp).map(([k, v]) => ({ a: k[0] + k.slice(1).toLowerCase().replace(/\s*\(desde 2do nivel\)/, ' (desde 2.º nivel)'), v })).sort((a, b) => b.v - a.v) : [];
-    const ss = ultimoDet(D.det.sat_serv[c]), sc = medir('sat_serv', c).cur;
+    const gRows = g ? ORD.filter(k => g.rows[k]).map(k => ({ a: GSE_NOM[k], gse: k, v: g.rows[k].v, n: g.rows[k].n })) : [];
+    const tp = bc ? (detDe('beca_tipo', c) || {})[bc.p] : null;
+    const tRows = tp ? Object.entries(tp).map(([k, v]) => ({ a: k[0] + k.slice(1).toLowerCase().replace(/\s*\(desde 2do nivel\)/, ' (desde 2.º nivel)'), v })).sort((a, b) => (b.v || 0) - (a.v || 0)) : [];
+    const ss = ultimoDet(detDe('sat_serv', c)), sc = medir('sat_serv', c).cur;
     return `<div class="kpis">${ids.map(id => kpi(id)).join('')}</div>` + lectura(insApoyo()) +
       `<div class="grid2">` +
       panel('Cobertura de tutorías académicas', 'tut_cob', slot(el => lineChart(el, 'tut_cob'))) +
       panel('Estudiantes con beca o ayuda', 'beca_cob', slot(el => lineChart(el, 'beca_cob'))) +
       `</div><div class="grid3">` +
       panel('¿A quién llegan las becas?', 'beca_cob', hbars(gRows, { max: Math.max(25, ...gRows.map(r => r.v)), color: COL[c], tip: r => `Nivel ${r.a.toLowerCase()}: ${num(r.v, 1)} % con beca\n${num(r.n)} matriculados en el grupo` }),
-        bc ? `Porcentaje con beca dentro de cada nivel socioeconómico · ${esc(bc.l)}` : '') +
-      panel('Tipo de beca', 'beca_cob', hbars(tRows, { fmt: v => num(v) + ' est.', color: '#4597bf', tip: r => `${r.a}: ${num(r.v)} estudiantes` }), bc ? `Estudiantes beneficiarios · ${esc(bc.l)}` : '') +
+        bc ? `Porcentaje con beca dentro de cada nivel · ${esc(bc.l)} · pulsa un nivel para filtrar` : '') +
+      panel('Tipo de beca', 'beca_cob', hbars(tRows, { fmt: v => num(v) + ' est.', vacio: 'Menos de 5', color: '#4597bf', tip: r => r.v == null ? `${r.a}: menos de 5 estudiantes` : `${r.a}: ${num(r.v)} estudiantes` }), bc ? `Estudiantes beneficiarios · ${esc(bc.l)}` : '') +
       panel('Satisfacción con cada servicio', 'sat_serv', ss ? hbars(ss.rows, { max: 100, prev: ss.prev && mapa(ss.prev), ref: sc && sc.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 · promedio ${num(r.media, 2)} de 5` }) : '',
         ss ? `${esc(lblDe(ss.k))}${ss.prevK ? ' · la flecha compara con ' + esc(lblDe(ss.prevK)) : ''}` : `Sin medición hasta ${st.anio}`) +
       `</div>` + tabla(ids);
@@ -591,13 +634,16 @@
   function nav() {
     document.getElementById('nav').innerHTML = VISTAS.map(v => v.sep ? '<li class="nav-sep" role="separator"></li>' :
       `<li><button type="button" class="${st.vista === v.id ? 'on' : ''}" ${v.off ? 'disabled title="Vista en preparación"' : `data-go="${v.id}"`} ${st.vista === v.id ? 'aria-current="page"' : ''}>` +
-      `<svg viewBox="0 0 24 24">${IC[v.id]}</svg>${v.num ? `<span class="num">${v.num}.</span>` : ''}<span>${esc(v.nom)}</span></button></li>`).join('') +
-      '<li class="nav-nota">Las vistas en gris están en preparación.</li>';
+      `<svg viewBox="0 0 24 24">${IC[v.id]}</svg>${v.num ? `<span class="num">${v.num}.</span>` : ''}<span>${esc(v.nom)}</span></button></li>`).join('');
   }
   function render(scroll) {
     tipHide(); nav();
     const v = VISTAS.find(x => x.id === st.vista);
-    const head = `<div class="vhead"><div class="ic"><svg viewBox="0 0 24 24">${IC[v.id]}</svg></div><div><h2>${v.num ? v.num + '. ' : ''}${esc(v.nom)}</h2><p>${esc(v.obj)} · ${esc(NOM[st.car])}, hasta ${st.anio}</p></div></div>`;
+    const chips = [];
+    if (st.sem) chips.push(`<button type="button" class="chip" data-quitar="sem">Periodo: ${esc(lblDe(st.sem))}<span class="x" aria-label="Quitar">×</span></button>`);
+    if (st.gse) chips.push(`<button type="button" class="chip" data-quitar="gse">Nivel socioeconómico: ${esc(GSE_NOM[st.gse])}<span class="x" aria-label="Quitar">×</span></button>`);
+    const head = `<div class="vhead"><div class="ic"><svg viewBox="0 0 24 24">${IC[v.id]}</svg></div><div><h2>${v.num ? v.num + '. ' : ''}${esc(v.nom)}</h2><p>${esc(v.obj)} · ${esc(NOM[st.car])}, ${esc(etiquetaCorte())}</p></div>` +
+      `<div class="chips">${chips.join('')}${chips.length ? '<button type="button" class="chip-limpiar" data-quitar="todo">Quitar filtros</button>' : '<span class="chip-ayuda">Pulsa un punto, una barra o una carrera en los gráficos para filtrar todo el tablero</span>'}</div></div>`;
     pend = [];
     root.innerHTML = head + RENDER[st.vista]();
     montar(root);
@@ -605,7 +651,8 @@
       const k = document.getElementById('k-' + st.foco);
       if (k) { k.classList.add('flash'); if (scroll) k.scrollIntoView({ block: 'center' }); }
     } else if (scroll) window.scrollTo(0, 0);
-    const h = '#' + st.vista + (st.foco ? '/' + st.foco : '') + `?c=${st.car}&a=${st.anio}`;
+    const h = '#' + st.vista + (st.foco ? '/' + st.foco : '') + `?c=${st.car}&a=${st.anio}` +
+      (st.sem ? '&s=' + st.sem : '') + (st.gse ? '&g=' + encodeURIComponent(st.gse) : '');
     if (location.hash !== h) history.replaceState(null, '', h);
   }
   function leerHash() {
@@ -616,17 +663,28 @@
     const qs = new URLSearchParams(m[3] || '');
     if (NOM[qs.get('c')]) st.car = qs.get('c');
     if (anios.includes(+qs.get('a'))) st.anio = +qs.get('a');
+    st.sem = D.periodos.some(x => x.p === qs.get('s')) ? qs.get('s') : null;
+    if (st.sem) st.anio = +st.sem.slice(-4);
+    st.gse = GSE_NOM[qs.get('g')] ? qs.get('g') : null;
   }
+
+  /* ---------- filtro cruzado ---------- */
+  function filtrarPeriodo(p) {
+    if (esAnual(p)) { st.sem = null; st.anio = +p; }
+    else if (st.sem === p) st.sem = null;          // segundo clic: quita el filtro
+    else { st.sem = p; st.anio = +p.slice(-4); }
+    fA.value = st.anio; render(false);
+  }
+  function filtrarCarrera(c) { st.car = st.car === c && c !== 'FACS' ? 'FACS' : c; fC.value = st.car; render(false); }
+  function filtrarGse(g) { st.gse = st.gse === g ? null : g; render(false); }
 
   /* filtros */
   const fC = document.getElementById('fCarrera'), fA = document.getElementById('fAnio');
   fA.innerHTML = anios.slice().reverse().map(a => `<option value="${a}">${a}</option>`).join('');
-  const f = D.actualizado.split('-');
-  document.getElementById('fUpd').textContent = `${f[2]}/${f[1]}/${f[0]}`;
   leerHash();
   fC.value = st.car; fA.value = st.anio;
   fC.addEventListener('change', () => { st.car = fC.value; render(false); });
-  fA.addEventListener('change', () => { st.anio = +fA.value; render(false); });
+  fA.addEventListener('change', () => { st.anio = +fA.value; st.sem = null; render(false); });
 
   document.addEventListener('click', e => {
     const go = e.target.closest('[data-go]');
@@ -634,7 +692,18 @@
     const gr = e.target.closest('[data-grupo]');
     if (gr) { grupoDet = gr.dataset.grupo; render(false); return; }
     const vi = e.target.closest('[data-vin]');
-    if (vi) { vinTodos = vi.dataset.vin === '1'; render(false); }
+    if (vi) { vinTodos = vi.dataset.vin === '1'; render(false); return; }
+    const ca = e.target.closest('.legend [data-car]');
+    if (ca) { filtrarCarrera(ca.dataset.car); return; }
+    const gs = e.target.closest('[data-gse]');
+    if (gs) { filtrarGse(gs.dataset.gse); return; }
+    const qu = e.target.closest('[data-quitar]');
+    if (qu) {
+      const k = qu.dataset.quitar;
+      if (k === 'sem' || k === 'todo') st.sem = null;
+      if (k === 'gse' || k === 'todo') st.gse = null;
+      render(false);
+    }
   });
   let rz; let anchoPrevio = innerWidth;
   window.addEventListener('resize', () => {  // los gráficos se dibujan al ancho real de su panel

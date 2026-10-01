@@ -8,46 +8,34 @@
 </head>
 <body>
 
-<header class="brandbar">
-  <img class="brandbar-logo" src="img/logo-vicerrectorado.png"
+<!-- Encabezado fijo: el logo y los filtros quedan siempre a la vista -->
+<header class="appbar">
+  <img class="appbar-logo" src="img/logo-vicerrectorado.png"
        alt="UNEMI · Vicerrectorado Académico de Formación de Grado">
+  <div class="appbar-titulo">
+    <h1>Dashboard de Desempeño de la Carrera</h1>
+    <p>Facultad de Ciencias de la Salud · Estándares ACBSP</p>
+  </div>
+  <div class="filters">
+    <div class="fld"><label for="fCarrera">Carrera</label>
+      <select id="fCarrera">
+        <option value="FACS">Toda la facultad</option>
+        <option value="ENF">Enfermería</option>
+        <option value="NUT">Nutrición y Dietética</option>
+      </select></div>
+    <div class="fld"><label for="fModalidad">Modalidad</label>
+      <select id="fModalidad" disabled><option>Presencial</option></select></div>
+    <div class="fld"><label for="fNivel">Nivel</label>
+      <select id="fNivel" disabled><option>Grado</option></select></div>
+    <div class="fld"><label for="fAnio">Periodo</label><select id="fAnio"></select></div>
+  </div>
 </header>
 
 <div class="shell">
   <aside class="side">
-    <div class="side-head">
-      <div class="k">ACBSP · FACS</div>
-      <div class="t">Desempeño de la carrera</div>
-    </div>
     <nav aria-label="Vistas del dashboard"><ul class="nav" id="nav"></ul></nav>
   </aside>
-
   <main class="main">
-    <div class="topbar">
-      <div class="head">
-        <div>
-          <h1>Dashboard de Desempeño de la Carrera</h1>
-          <p class="sub" id="subtitulo">Facultad de Ciencias de la Salud · Alineado a los estándares ACBSP</p>
-        </div>
-        <div class="filters">
-          <div class="fld"><label for="fCarrera">Carrera</label>
-            <select id="fCarrera">
-              <option value="FACS">Toda la facultad</option>
-              <option value="ENF">Enfermería</option>
-              <option value="NUT">Nutrición y Dietética</option>
-            </select></div>
-          <div class="fld"><label for="fModalidad">Modalidad</label>
-            <select id="fModalidad" disabled><option>Presencial</option></select></div>
-          <div class="fld"><label for="fNivel">Nivel</label>
-            <select id="fNivel" disabled><option>Grado</option></select></div>
-          <div class="fld"><label for="fAnio">Periodo</label><select id="fAnio"></select></div>
-          <div class="upd" title="Fecha de corte de la información">
-            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-            <div><div class="l">Última actualización</div><div class="v" id="fUpd">—</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
     <div class="body" id="vista"></div>
   </main>
 </div>

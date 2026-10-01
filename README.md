@@ -19,9 +19,18 @@ Tablero de seguimiento ACBSP de la Facultad de Ciencias de la Salud
 | 7 | Vinculación e impacto | Publicada |
 | 8 | Servicios de apoyo | Publicada |
 
+Las vistas en preparación no aparecen en el menú hasta que tengan datos.
+
 Filtros comunes: carrera, modalidad, nivel y periodo (año). Cada indicador se
 muestra en su periodicidad real (semestral o anual): la tarjeta toma la última
 medición disponible hasta el año elegido y la compara con la anterior.
+
+**Filtro cruzado.** Pulsar un punto o una barra filtra todo el tablero a ese
+periodo; pulsar una carrera en la leyenda o en la etiqueta de una línea cambia
+la carrera; pulsar un nivel socioeconómico recalcula los indicadores de
+estudiantes (satisfacción, tutorías y becas) para ese nivel. Los indicadores
+que no tienen ese desglose (graduados, docentes, producción, vinculación) lo
+indican en su tarjeta. Celdas con menos de 10 personas no se publican.
 
 ## Estructura
 

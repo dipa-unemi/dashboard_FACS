@@ -372,16 +372,16 @@ for k, sub in por_carrera(vx):
     s = {c: [] for c in ["vin_proy", "vin_benef", "vin_avance", "vin_est", "vin_culm", "vin_doc"]}
     for a in anios_v:
         x, xp = sub[sub.anio_inicio == a], up[up.anio_inicio == a]
-        s["vin_proy"].append(punto_anio(a, int(len(xp))))
-        s["vin_benef"].append(punto_anio(a, int(xp.benef_directos_personas.sum())))
+        s["vin_proy"].append(punto_anio(a, int(len(xp)), parcial=a == ANIO_ACTUAL))
+        s["vin_benef"].append(punto_anio(a, int(xp.benef_directos_personas.sum()), parcial=a == ANIO_ACTUAL))
         # Cumplimiento: solo proyectos que ya terminaron; los que siguen en
         # ejecución tienen informes parciales y bajarían el promedio sin razón.
         con = xp[xp.avance_pct.notna() & xp.estado_proyecto.isin(["FINALIZADO", "CERRADO"])]
-        s["vin_avance"].append(punto_anio(a, round(con.avance_pct.mean(), 1) if len(con) else None, len(con)))
-        s["vin_est"].append(punto_anio(a, int(x.estudiantes.sum())))
+        s["vin_avance"].append(punto_anio(a, round(con.avance_pct.mean(), 1) if len(con) else None, len(con), parcial=a == ANIO_ACTUAL))
+        s["vin_est"].append(punto_anio(a, int(x.estudiantes.sum()), parcial=a == ANIO_ACTUAL))
         cerr = x.est_culminados.sum() + x.est_retirados.sum() + x.est_reprobados.sum()
-        s["vin_culm"].append(punto_anio(a, pct(x.est_culminados.sum(), cerr), cerr))
-        s["vin_doc"].append(punto_anio(a, int(x.docentes.sum())))
+        s["vin_culm"].append(punto_anio(a, pct(x.est_culminados.sum(), cerr), cerr, parcial=a == ANIO_ACTUAL))
+        s["vin_doc"].append(punto_anio(a, int(x.docentes.sum()), parcial=a == ANIO_ACTUAL))
     for c in s:
         ind[c][k] = s[c]
     todos = vinc if k == TODAS else vinc[vinc.carrera == [n for n, c in CARRERAS.items() if c == k][0]]
@@ -412,10 +412,20 @@ tut["cod"] = tut.periodo.map(COD_DE)
 assert tut.cod.notna().all()
 beca["carrera"] = beca.carrera_estudiante
 beca["cod"] = beca.periodo.map(COD_DE)
-for clave in ["tut_cob", "tut_int", "tut_ejec", "beca_cob"]:
-    ind[clave] = {}
-detalle["beca_tipo"], detalle["beca_gse"] = {}, {}
-for k in CLAVES:
+
+
+def bloque_apoyo(tut, beca):
+    """Tutorías y becas por carrera y periodo, contra la MATRICULA vigente."""
+    res = {c: {} for c in ["tut_cob", "tut_int", "tut_ejec", "beca_cob"]}
+    det = {"beca_tipo": {}, "beca_gse": {}}
+    for k in CLAVES:
+        sc, si, se, sb, tipo, gse = bloque_apoyo_carrera(tut, beca, k)
+        res["tut_cob"][k], res["tut_int"][k], res["tut_ejec"][k], res["beca_cob"][k] = sc, si, se, sb
+        det["beca_tipo"][k], det["beca_gse"][k] = tipo, gse
+    return res, det
+
+
+def bloque_apoyo_carrera(tut, beca, k):
     t = tut if k == TODAS else tut[tut.carrera == [n for n, c in CARRERAS.items() if c == k][0]]
     b = beca if k == TODAS else beca[beca.carrera == [n for n, c in CARRERAS.items() if c == k][0]]
     sc, si, se, sb, tipo, gse = [], [], [], [], {}, {}
@@ -440,8 +450,71 @@ for k in CLAVES:
         m["beca"] = m.inscripcion_id.isin(set(y.inscripcion_id))
         gse[c] = {g: {"v": pct(h.beca.sum(), len(h)), "n": int(len(h))}
                   for g, h in m.groupby("grupo_socioeconomico") if len(h) >= 10}
-    ind["tut_cob"][k], ind["tut_int"][k], ind["tut_ejec"][k], ind["beca_cob"][k] = sc, si, se, sb
-    detalle["beca_tipo"][k], detalle["beca_gse"][k] = tipo, gse
+    return sc, si, se, sb, tipo, gse
+
+
+_r, _d = bloque_apoyo(tut, beca)
+ind.update(_r)
+detalle.update(_d)
+
+# ==================================== FILTRO CRUZADO · NIVEL SOCIOECONÓMICO
+# Los indicadores de estudiantes se recalculan dentro de cada nivel
+# socioeconómico (el que trae la matrícula del periodo), para que el tablero
+# pueda filtrarse al pulsar ese nivel. Se publican con la clave "CARRERA|NIVEL".
+# Una celda con menos de 10 personas no se publica: el porcentaje de un grupo
+# tan chico no es estable y acercaría el dato a personas identificables.
+GSE = ["BAJO", "MEDIO BAJO", "MEDIO TÍPICO", "MEDIO ALTO", "ALTO"]
+MIN_CELDA = 10
+gse_de = (matr.drop_duplicates(["cod", "inscripcion_id"])
+          .set_index(["cod", "inscripcion_id"]).grupo_socioeconomico.to_dict())
+
+
+def con_gse(df):
+    return df.assign(gse=[gse_de.get(x) for x in zip(df.cod, df.inscripcion_id)])
+
+
+sest_g, serv_g, tut_g, beca_g = (con_gse(x) for x in (sest_d, serv, tut, beca))
+MATRICULA_TODA = MATRICULA
+for g in GSE:
+    MATRICULA = {kc: {i for i in s if gse_de.get((kc[1], i)) == g} for kc, s in MATRICULA_TODA.items()}
+    partes = {"sat_est": serie_satisf(sest_g[sest_g.gse == g], 4),
+              "sat_serv": serie_satisf(serv_g[serv_g.gse == g], 4)}
+    _r, _d = bloque_apoyo(tut_g[tut_g.gse == g], beca_g[beca_g.gse == g])
+    partes.update(_r)
+    for k, porper in _d["beca_tipo"].items():
+        detalle["beca_tipo"][f"{k}|{g}"] = porper
+    dets = {"sat_est": detalle_aspectos(sest_g[sest_g.gse == g], 4),
+            "sat_serv": detalle_aspectos(serv_g[serv_g.gse == g], 4)}
+    for clave, porcar in partes.items():
+        for k, s in porcar.items():
+            for p in s:
+                base = p.get("n")
+                if base is None or base < MIN_CELDA:
+                    for campo in ("v", "n", "num", "cob", "media", "resp"):
+                        p.pop(campo, None)
+                    p["v"] = None
+            ind[clave][f"{k}|{g}"] = s
+    for clave, porcar in dets.items():
+        for k, porper in porcar.items():
+            detalle[clave][f"{k}|{g}"] = {c: [r for r in filas if r["n"] >= MIN_CELDA] for c, filas in porper.items()}
+MATRICULA = MATRICULA_TODA
+
+# Tipos de beca con menos de 5 beneficiarios no se publican con su número:
+# «1 estudiante con beca por discapacidad» en una carrera y un semestre señala a alguien.
+for porper in detalle["beca_tipo"].values():
+    for tipos in porper.values():
+        for t, v in tipos.items():
+            if v < 5:
+                tipos[t] = None
+
+# Satisfacción estudiantil por nivel socioeconómico en cada periodo (panel de la vista 3).
+detalle["sat_gse"] = {}
+for k in CLAVES:
+    detalle["sat_gse"][k] = {}
+    for g in GSE:
+        for p in ind["sat_est"][f"{k}|{g}"]:
+            if p["v"] is not None:
+                detalle["sat_gse"][k].setdefault(p["p"], {})[g] = {"v": p["v"], "n": p["n"]}
 
 # ======================================================== catálogo de periodos
 salida = {
