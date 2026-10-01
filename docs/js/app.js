@@ -32,7 +32,7 @@
 (function () {
   'use strict';
   const D = window.FACS_DATA, CAT = window.FACS_INDICADORES, R = window.FACS_REND, G = window.FACS_GRAD, T = window.FACS_TRAY, P = window.FACS_PERFIL,
-    DOC = window.FACS_DOC;   // vista 4 - Cuerpo docente (indicadores_docentes_FACS_estandarizado.R)
+    DOC = window.FACS_DOC;   // vista 3 - Cuerpo docente (indicadores_docentes_FACS_estandarizado.R)
   /* Protección de datos: umbrales con que se exportaron los datos de la vista 1 (ver exportar_rendimiento_dashboard.R). */
   /* El perfil no aplica umbral (decisión de la Dirección); las demás pestañas sí. */
   const MIN_BASE = (R || T || G || {}).minBase || 0, K_ANON = (R || G || T || {}).kAnon || 0;
@@ -54,7 +54,7 @@
     rendimiento: '<path d="M12 6.5C10 5 7 4.6 3.5 5v13c3.5-.4 6.5.1 8.5 1.5 2-1.4 5-1.9 8.5-1.5V5C17 4.6 14 5 12 6.5z"/><path d="M12 6.5V19"/>',
     idea: '<path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0012 3z"/>'
   };
-  /* Íconos de las tarjetas (vistas 1 y 4): trazos de 24 × 24, mismo estilo que el menú. */
+  /* Íconos de las tarjetas (vistas 1 y 3): trazos de 24 × 24, mismo estilo que el menú. */
   const ICO = {
     personas: IC.estudiantes,
     tendencia: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
@@ -104,7 +104,7 @@
     grad_compe: ICO.bombilla, grad_compg: ICO.libro, grad_conv: ICO.mano, grad_bolsa: ICO.lupa, grad_maest: ICO.birrete, grad_malla: ICO.cuadricula,
     doc_n: ICO.personas, doc_tc: ICO.reloj, doc_cuarto: ICO.libro, doc_phd: ICO.birrete, doc_maest: ICO.diploma,
     doc_eval: ICO.estrella, doc_cap: ICO.bombilla, sat_doc: ICO.sonrisa, sat_est: ICO.sonrisa, sat_grad: ICO.diploma,
-    // vistas 3, 6, 7 y 8
+    // vistas 2, 4, 5 y 6
     pub_total: ICO.documento, doc_prod: ICO.lapiz, pub_alto: ICO.globo, pub_q12: ICO.estrella, pub_est: ICO.birrete, pub_proy: ICO.bombilla,
     vin_proy: ICO.mano, vin_benef: ICO.personas, vin_avance: ICO.tendencia, vin_est: ICO.birrete, vin_culm: ICO.check,
     sat_serv: ICO.sonrisa, tut_cob: ICO.mensaje, tut_ejec: ICO.calendario, tut_int: ICO.repetir, beca_cob: ICO.dolar
@@ -113,11 +113,11 @@
     { id: 'inicio', num: '', nom: 'Vista general', obj: 'Lectura ejecutiva de los indicadores estratégicos de la carrera.' },
     { sep: true },
     { id: 'estudiantes', num: '1', nom: 'Estudiantes', obj: 'Rendimiento académico de los estudiantes y trayectoria de los graduados.' },
-    { id: 'grupos', num: '3', nom: 'Grupos de interés', obj: 'Percepción de estudiantes, graduados y docentes sobre la carrera.' },
-    { id: 'docentes', num: '4', nom: 'Cuerpo docente', obj: 'Composición, nivel académico, desempeño y desarrollo del cuerpo docente de la carrera.' },
-    { id: 'investigacion', num: '6', nom: 'Investigación y actividad académica', obj: 'Producción científica del cuerpo docente: cuánto se publica, dónde y con quién.' },
-    { id: 'vinculacion', num: '7', nom: 'Vinculación e impacto', obj: 'Actividad, cobertura y resultados de los proyectos de vinculación con la sociedad.' },
-    { id: 'apoyo', num: '8', nom: 'Servicios de apoyo', obj: 'Acceso, cobertura y percepción de los servicios que acompañan la trayectoria del estudiante.' }
+    { id: 'grupos', num: '2', nom: 'Grupos de interés', obj: 'Percepción de estudiantes, graduados y docentes sobre la carrera.' },
+    { id: 'docentes', num: '3', nom: 'Cuerpo docente', obj: 'Composición, nivel académico, desempeño y desarrollo del cuerpo docente de la carrera.' },
+    { id: 'investigacion', num: '4', nom: 'Investigación y actividad académica', obj: 'Producción científica del cuerpo docente: cuánto se publica, dónde y con quién.' },
+    { id: 'vinculacion', num: '5', nom: 'Vinculación e impacto', obj: 'Actividad, cobertura y resultados de los proyectos de vinculación con la sociedad.' },
+    { id: 'apoyo', num: '6', nom: 'Servicios de apoyo', obj: 'Acceso, cobertura y percepción de los servicios que acompañan la trayectoria del estudiante.' }
   ];
 
   /* ------------------------------------------------------------ estado */
@@ -1386,7 +1386,7 @@
       (st.sub === 'grad' ? vGrad() : st.sub === 'rend' ? vRend() : st.sub === 'perfil' ? vPerfil() : vTray()) + priv;
   }
 
-  /* ---------------- Vista 4 - Cuerpo docente ---------------- */
+  /* ---------------- Vista 3 - Cuerpo docente ---------------- */
   /* Detalle del último año con datos hasta el año elegido. */
   function docDet(car) {
     const an = (DOC && DOC.det[car]) || {}, ys = Object.keys(an).filter(y => +y <= anioCorte()).sort();
@@ -1465,7 +1465,7 @@
       `</div>` + tabla(['doc_n', 'doc_tc', 'doc_cuarto', 'doc_phd', 'doc_maest', 'doc_evalcob', 'doc_eval', 'doc_cap', 'doc_carga']);
   }
 
-  /* ---------------- Vista 3 ---------------- */
+  /* ---------------- Vista 2 - Grupos de interés ---------------- */
   function insGrupos() {
     const out = [], c = st.car;
     const se = medir('sat_est', c);
@@ -1530,7 +1530,7 @@
       cur ? `${esc(cur.l)} - pulsa un nivel para filtrar el tablero` : '');
   }
 
-  /* ---------------- Vista 6 ---------------- */
+  /* ---------------- Vista 4 - Investigación ---------------- */
   function insInvest() {
     const out = [], c = st.car, s = serie('pub_total', c).filter(p => p.a <= st.anio);
     const full = s.filter(p => !p.parcial), ref = full[full.length - 1];
@@ -1581,7 +1581,7 @@
       `</div>` + tabla(ids.concat('pub_proy'));
   }
 
-  /* ---------------- Vista 7 ---------------- */
+  /* ---------------- Vista 5 - Vinculación ---------------- */
   function insVinc() {
     const out = [], c = st.car;
     const p = medir('vin_proy', c).cur, b = medir('vin_benef', c).cur, a = medir('vin_avance', c).cur, u = medir('vin_culm', c).cur;
@@ -1613,7 +1613,7 @@
       tabla(ids.concat('vin_est'));
   }
 
-  /* ---------------- Vista 8 ---------------- */
+  /* ---------------- Vista 6 - Servicios de apoyo ---------------- */
   function insApoyo() {
     const out = [], c = st.car;
     const bc = medir('beca_cob', c).cur, g = ultimoDet(D.det.beca_gse[c], k => bc && k === bc.p);

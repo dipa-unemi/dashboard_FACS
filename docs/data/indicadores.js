@@ -299,7 +299,7 @@ window.FACS_INDICADORES = {
     responsable: "Seguimiento a graduados", meta: null, lineaBase: null, tolerancia: 5, umbral: 1
   },
 
-  /* ---------------- Vista 4 - Cuerpo docente (matriz ACBSP) ----------------
+  /* ---------------- Vista 3 - Cuerpo docente (matriz ACBSP) ----------------
      Fuente: Result_docente (planta) + desempeno_doc (SGA). Por año: docentes que dictaron en la carrera. */
   doc_n: {
     vista: "docentes", dimension: "Docentes", nombre: "Docentes de la carrera",
@@ -366,7 +366,7 @@ window.FACS_INDICADORES = {
     responsable: "Dirección de carrera", meta: null, lineaBase: null, tolerancia: 10, umbral: 0.05
   },
 
-  /* ---------------- Vista 3 - Grupos de interés ---------------- */
+  /* ---------------- Vista 2 - Grupos de interés ---------------- */
   sat_est: {
     vista: "grupos", dimension: "Grupos de interés", nombre: "Satisfacción estudiantil",
     definicion: "Porcentaje de respuestas de los estudiantes que califican con 4 o 5, en una escala de 1 a 5, su experiencia académica y los servicios de la universidad.",
@@ -389,7 +389,7 @@ window.FACS_INDICADORES = {
     responsable: "Dirección de Evaluación y Perfeccionamiento Académico", meta: null, lineaBase: null, tolerancia: 5, umbral: 1
   },
 
-  /* ---------------- Vista 6 - Investigación ---------------- */
+  /* ---------------- Vista 4 - Investigación ---------------- */
   pub_total: {
     vista: "investigacion", dimension: "Investigación", nombre: "Producción científica",
     definicion: "Artículos publicados por los docentes de la carrera, aprobados por la universidad y con categoría institucional asignada. Cada artículo se cuenta una sola vez aunque lo firmen varios docentes.",
@@ -434,7 +434,7 @@ window.FACS_INDICADORES = {
     responsable: "Facultad de Investigación", meta: null, lineaBase: null, tolerancia: 10, umbral: 0.05
   },
 
-  /* ---------------- Vista 7 - Vinculación ---------------- */
+  /* ---------------- Vista 5 - Vinculación ---------------- */
   vin_proy: {
     vista: "vinculacion", dimension: "Vinculación", nombre: "Proyectos ejecutados", tipo: "Actividad",
     definicion: "Proyectos de vinculación con la sociedad aprobados que iniciaron en el año, estén en ejecución, finalizados o cerrados.",
@@ -471,7 +471,7 @@ window.FACS_INDICADORES = {
     responsable: "Facultad de Vinculación", meta: null, lineaBase: null, tolerancia: 5, umbral: 1
   },
 
-  /* ---------------- Vista 8 - Servicios de apoyo ---------------- */
+  /* ---------------- Vista 6 - Servicios de apoyo ---------------- */
   sat_serv: {
     vista: "apoyo", dimension: "Servicios de apoyo", nombre: "Satisfacción con servicios de apoyo",
     definicion: "Porcentaje de respuestas de los estudiantes que califican con 4 o 5 los servicios que acompañan su trayectoria: tutorías, salud y bienestar, prácticas, trámites, atención de requerimientos, seguridad e instalaciones deportivas.",

@@ -11,11 +11,11 @@ Enfermería y Nutrición y Dietética.
 |---|---|
 | Vista general | Los indicadores principales de un vistazo |
 | 1. Estudiantes | Cuatro pestañas: **Trayectoria** (matrícula, retención, deserción y graduación por cohorte), **Perfil sociodemográfico** (sexo, edad de ingreso, etnia, discapacidad, nivel socioeconómico y procedencia), **Rendimiento académico** (aprobación, reprobación, notas, asistencia y repetición por periodo, nivel y grupo de estudiantes) y **Seguimiento a graduados** (trayectoria, condiciones del empleo y formación y vinculación, por año de encuesta y momento) |
-| 4. Cuerpo docente | Planta docente, nivel académico, doctorado, cualificación ACBSP (criterio provisional), evaluación, capacitación, dedicación, categoría y perfil demográfico |
-| 3. Grupos de interés | Cómo perciben la carrera los estudiantes, los graduados y los docentes |
-| 6. Investigación y actividad académica | Cuánto publica el cuerpo docente, en qué revistas y con quién |
-| 7. Vinculación e impacto | Proyectos con la comunidad, personas que se propusieron atender y resultados |
-| 8. Servicios de apoyo | Cobertura de tutorías y becas, y satisfacción con los servicios |
+| 2. Grupos de interés | Cómo perciben la carrera los estudiantes, los graduados y los docentes |
+| 3. Cuerpo docente | Planta docente, nivel académico, doctorado, evaluación del desempeño, capacitación, dedicación, perfil demográfico y provincia |
+| 4. Investigación y actividad académica | Cuánto publica el cuerpo docente, en qué revistas y con quién |
+| 5. Vinculación e impacto | Proyectos con la comunidad, personas que se propusieron atender y resultados |
+| 6. Servicios de apoyo | Cobertura de tutorías y becas, y satisfacción con los servicios |
 
 Cada vista presenta los indicadores con su resultado y su tendencia frente a la
 medición anterior, los gráficos históricos y una tabla de resultados del periodo.
