@@ -103,7 +103,7 @@ grad = leer("Result_graduados.xlsx")
 sest = leer("satisfaccion_est.xlsx")
 sdoc = leer("satisfaccion_doc.xlsx")
 desem = leer("desempeno_doc.xlsx")
-vinc = leer("vinculacion.xlsx")
+vinc = leer("vinculacion.xlsx", na_values=[r"\N"])  # el extracto marca los vacíos con \N
 
 # Periodos académicos regulares: los once que comparten becas, tutorías y
 # evaluación docente. Fuera quedan remediales, módulos y periodos de planificación.
@@ -363,6 +363,14 @@ def nombre_proyecto(t):
 EJECUTADOS = {"APROBADO / EN EJECUCION", "FINALIZADO", "CERRADO"}
 vinc["carrera"] = vinc.carrera
 vx = vinc[vinc.estado_proyecto.isin(EJECUTADOS)].copy()
+# Un proyecto se ejecuta en todos los años entre su inicio y su fin real (como
+# la matriz SIIES de proyectos ejecutados). Sin fecha de fin: si sigue en
+# ejecución llega al año en curso; si ya terminó, solo cuenta su año de inicio.
+fin = pd.to_datetime(vx.fechareal, errors="coerce").dt.year
+vx["anio_fin"] = fin.fillna(vx.anio_inicio.where(vx.estado_proyecto != "APROBADO / EN EJECUCION", ANIO_ACTUAL)).astype(int)
+# Las juntas receptoras del voto (elecciones) no son proyectos con la comunidad:
+# no se cuentan como proyectos ejecutados ni salen en la tabla.
+vx["electoral"] = vx.proyecto.str.contains("JUNTAS RECEPTORAS DEL VOTO", case=False)
 anios_v = sorted(vinc.anio_inicio.unique())
 for clave in ["vin_proy", "vin_benef", "vin_avance", "vin_est", "vin_culm", "vin_doc"]:
     ind[clave] = {}
@@ -372,7 +380,8 @@ for k, sub in por_carrera(vx):
     s = {c: [] for c in ["vin_proy", "vin_benef", "vin_avance", "vin_est", "vin_culm", "vin_doc"]}
     for a in anios_v:
         x, xp = sub[sub.anio_inicio == a], up[up.anio_inicio == a]
-        s["vin_proy"].append(punto_anio(a, int(len(xp)), parcial=a == ANIO_ACTUAL))
+        activos = up[(up.anio_inicio <= a) & (up.anio_fin >= a) & ~up.electoral]
+        s["vin_proy"].append(punto_anio(a, int(len(activos)), parcial=a == ANIO_ACTUAL))
         s["vin_benef"].append(punto_anio(a, int(xp.benef_directos_personas.sum()), parcial=a == ANIO_ACTUAL))
         # Cumplimiento: solo proyectos que ya terminaron; los que siguen en
         # ejecución tienen informes parciales y bajarían el promedio sin razón.
@@ -387,8 +396,8 @@ for k, sub in por_carrera(vx):
     todos = vinc if k == TODAS else vinc[vinc.carrera == [n for n, c in CARRERAS.items() if c == k][0]]
     detalle["vin_estado"][k] = todos.drop_duplicates("proyecto_id").estado_proyecto.value_counts().to_dict()
     filas = []
-    for _, r in sub.sort_values(["anio_inicio", "proyecto"], ascending=[False, True]).iterrows():
-        filas.append({"nom": nombre_proyecto(r.proyecto), "a": int(r.anio_inicio),
+    for _, r in sub[~sub.electoral].sort_values(["anio_inicio", "proyecto"], ascending=[False, True]).iterrows():
+        filas.append({"nom": nombre_proyecto(r.proyecto), "a": int(r.anio_inicio), "f": int(r.anio_fin),
                       "car": CARRERAS[r.carrera], "estado": r.estado_proyecto.title().replace(" / En Ejecucion", " / en ejecución"),
                       "av": None if pd.isna(r.avance_pct) else round(float(r.avance_pct), 1),
                       "ben": int(r.benef_directos_personas), "est": int(r.estudiantes),

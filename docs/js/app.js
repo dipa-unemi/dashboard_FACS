@@ -840,7 +840,7 @@
         'Porcentaje de valoraciones positivas, última medición') +
       `</div><div class="sec"><h3>Investigación, vinculación y servicios de apoyo</h3></div><div class="grid3 arriba">` +
       panelVer('Artículos publicados por año', 'investigacion', slot(el => columnChart(el, { xs: columnasDe('pub_total'), h: 210 })), 'Artículos únicos aprobados - * año en curso') +
-      panelVer('Proyectos de vinculación por año', 'vinculacion', slot(el => columnChart(el, { xs: columnasDe('vin_proy'), h: 210 })), 'Proyectos aprobados según año de inicio') +
+      panelVer('Proyectos de vinculación por año', 'vinculacion', slot(el => columnChart(el, { xs: columnasDe('vin_proy'), h: 210 })), 'Proyectos en ejecución en algún momento del año') +
       panelVer('Servicios de apoyo', 'apoyo', apoyo.length ? hbars(apoyo, { max: 100, color: '#4597bf', tip: r => `${r.a}: ${num(r.v, 1)} % (${r.n})` }) : '<div class="empty"><b>Sin datos</b></div>',
         'Cobertura y satisfacción, última medición') +
       `</div>` + lectura(destacados, 'Lo más destacado');   // la síntesis va al final, después de los gráficos
@@ -1591,7 +1591,7 @@
   function insVinc() {
     const out = [], c = st.car;
     const p = medir('vin_proy', c).cur, b = medir('vin_benef', c).cur, a = medir('vin_avance', c).cur, u = medir('vin_culm', c).cur;
-    if (p) out.push(`En ${esc(p.l.replace(' (parcial)', ''))}${p.parcial ? ', con el año todavía en curso,' : ''} iniciaron ${B(num(p.v) + ' proyectos')} de vinculación` + (b ? `, que se propusieron atender a ${B(num(b.v) + ' personas')} de forma directa.` : '.'));
+    if (p) out.push(`En ${esc(p.l.replace(' (parcial)', ''))}${p.parcial ? ', con el año todavía en curso,' : ''} se ejecutaron ${B(num(p.v) + ' proyectos')} de vinculación` + (b ? `; los que iniciaron ese año se propusieron atender a ${B(num(b.v) + ' personas')} de forma directa.` : '.'));
     if (a) out.push(`Los proyectos que terminaron reportan, en promedio, ${B(fmt('vin_avance', a.v))} de avance sobre lo que planificaron (${esc(baseTxt('vin_avance', a))}, iniciados en ${esc(a.l)}).`);
     if (u) out.push(`${B(fmt('vin_culm', u.v))} de los estudiantes que cerraron su participación la culminó.`);
     return out;
@@ -1601,21 +1601,21 @@
     const c = st.car, ids = ['vin_proy', 'vin_benef', 'vin_avance', 'vin_culm'];
     const xsP = serie('vin_proy', c).filter(p => p.a <= st.anio && p.a >= 2021).map(p => ({ p: p.p, l: p.l, a: p.a, segs: [{ k: 'Proyectos', v: p.v, color: COL[c] }] }));
     const xsB = serie('vin_benef', c).filter(p => p.a <= st.anio && p.a >= 2021).map(p => ({ p: p.p, l: p.l, a: p.a, segs: [{ k: 'Beneficiarios previstos', v: p.v, color: COL[c] }] }));
-    const filas = (D.det.vin_proyectos[c] || []).filter(f => f.a <= st.anio && (vinTodos || f.a === st.anio));
+    const filas = (D.det.vin_proyectos[c] || []).filter(f => f.a <= st.anio && (vinTodos || f.f >= st.anio));
     const carN = { ENF: 'Enfermería', NUT: 'Nutrición', 'ENF+NUT': 'Ambas' };
     const tablaP = filas.length ? `<div class="tbl-wrap" style="max-height:420px;overflow-y:auto"><table class="res"><thead><tr><th>Proyecto</th>${c === 'FACS' ? '<th>Carrera</th>' : ''}<th class="n">Inicio</th><th>Estado</th><th>Avance reportado</th><th class="n">Beneficiarios previstos</th><th class="n">Estudiantes</th></tr></thead><tbody>` +
-      filas.map(f => `<tr class="${f.a === st.anio ? 'hl' : ''}"><td style="min-width:260px">${esc(f.nom)}</td>${c === 'FACS' ? `<td class="per">${esc(carN[f.car])}</td>` : ''}<td class="n">${f.a}</td>` +
+      filas.map(f => `<tr class="${f.a <= st.anio && f.f >= st.anio ? 'hl' : ''}"><td style="min-width:260px">${esc(f.nom)}</td>${c === 'FACS' ? `<td class="per">${esc(carN[f.car])}</td>` : ''}<td class="n">${f.a}</td>` +
         `<td><span class="pill ${/ejecuci/i.test(f.estado) ? 'ej' : 'fin'}">${/ejecuci/i.test(f.estado) ? 'En ejecución' : esc(f.estado)}</span></td>` +
         `<td>${f.av == null ? '<span class="per">Sin informe aprobado</span>' : `<span class="mini-bar"><i style="width:${f.av}%"></i></span>${num(f.av, 0)} %`}</td>` +
         `<td class="n">${num(f.ben)}</td><td class="n">${num(f.est)}</td></tr>`).join('') + '</tbody></table></div>'
-      : `<div class="empty"><b>No hay proyectos iniciados en ${st.anio}</b></div>`;
+      : `<div class="empty"><b>No hay proyectos ejecutados en ${st.anio}</b></div>`;
     const seg = `<div class="segbtns"><button type="button" class="segbtn ${vinTodos ? 'on' : ''}" data-vin="1">Hasta ${st.anio}</button><button type="button" class="segbtn ${!vinTodos ? 'on' : ''}" data-vin="0">Solo ${st.anio}</button></div>`;
     return `<div class="kpis">${ids.map(id => kpi(id)).join('')}</div>` + lectura(insVinc()) +
       `<div class="grid2">` +
-      panel('Proyectos ejecutados por año de inicio', 'vin_proy', slot(el => columnChart(el, { xs: xsP, h: 205 }))) +
+      panel('Proyectos ejecutados por año', 'vin_proy', slot(el => columnChart(el, { xs: xsP, h: 205 }))) +
       panel('Beneficiarios directos previstos', 'vin_benef', slot(el => columnChart(el, { xs: xsB, h: 205 }))) +
       `</div><div class="panel"><div class="ph"><h3>Proyectos de vinculación</h3><span style="flex:1"></span>${seg}</div>` +
-      `<p class="ph-note">${num(filas.length)} proyectos aprobados. El avance es el que el propio proyecto reporta en sus informes aprobados, frente a lo que planificó.</p>${tablaP}</div>` +
+      `<p class="ph-note">${num(filas.length)} proyectos. Se resaltan los que estuvieron en ejecución en ${st.anio}. El avance es el que el propio proyecto reporta en sus informes aprobados, frente a lo que planificó.</p>${tablaP}</div>` +
       tabla(ids.concat('vin_est'));
   }
 

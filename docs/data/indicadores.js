@@ -437,8 +437,8 @@ window.FACS_INDICADORES = {
   /* ---------------- Vista 5 - Vinculación ---------------- */
   vin_proy: {
     vista: "vinculacion", dimension: "Vinculación", nombre: "Proyectos ejecutados", tipo: "Actividad",
-    definicion: "Proyectos de vinculación con la sociedad aprobados que iniciaron en el año, estén en ejecución, finalizados o cerrados.",
-    formula: "Número de proyectos aprobados según año de inicio",
+    definicion: "Proyectos de vinculación con la sociedad que estuvieron en ejecución en algún momento del año, aunque hayan iniciado antes; hoy pueden seguir en ejecución, estar finalizados o cerrados. No se cuenta la participación en juntas receptoras del voto.",
+    formula: "Número de proyectos cuyo periodo de ejecución (inicio a fin real) incluye el año",
     unidad: "N.º", sentido: "mayor", frecuencia: "Anual", fuente: "SGA - Vinculación",
     responsable: "Facultad de Vinculación", meta: null, lineaBase: null, tolerancia: 10, umbral: 0.05
   },
