@@ -34,7 +34,8 @@ button, select { font-family:var(--font); }
 .appbar-titulo { border-left:1px solid var(--edge2); padding-left:22px; min-width:0; }
 .appbar-titulo h1 { font-size:19px; font-weight:700; letter-spacing:-.01em; line-height:1.15; color:var(--az-1); white-space:nowrap; }
 .appbar-titulo p { font-size:12px; color:var(--ink3); margin-top:2px; white-space:nowrap; }
-.sitefooter { background:var(--az-1); padding:16px 28px; display:flex; justify-content:flex-end; align-items:center; }
+.sitefooter { background:var(--az-1); padding:16px 28px; display:flex; justify-content:space-between; align-items:center; gap:16px 24px; flex-wrap:wrap; }
+.sitefooter .fuente { margin:0; color:#fff; font-size:13px; line-height:1.4; opacity:.9; }
 .sitefooter img { height:40px; width:auto; }
 
 /* ---------- estructura ---------- */
