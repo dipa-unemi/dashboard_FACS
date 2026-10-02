@@ -39,16 +39,16 @@ window.FACS_INDICADORES = {
     responsable: "Dirección de Innovación", meta: null, lineaBase: null, tolerancia: 5, umbral: 1, acumula: true
   },
   tray_des: {
-    vista: "estudiantes", sub: "tray", dimension: "Estudiantes", nombre: "Tasa de deserción",
-    definicion: "De los estudiantes matriculados en un periodo (sin contar a quienes se titulan o cursan el último nivel), porcentaje que no vuelve a matricularse en los dos periodos siguientes y no se titula. Necesita dos periodos posteriores: el año en curso aún no se puede medir.",
-    formula: "(Estudiantes sin matrícula en t+1 ni t+2 y sin título / estudiantes de la población definida en t) × 100",
-    unidad: "%", sentido: "menor", frecuencia: "Anual", fuente: "SGA - Matrícula y titulación",
+    vista: "estudiantes", sub: "tray", dimension: "Estudiantes", nombre: "Tasa de deserción (a mitad de la carrera)",
+    definicion: "De los estudiantes que iniciaron el primer nivel en una cohorte, porcentaje que ya no continuaba sus estudios a mitad de la carrera (5.º semestre de la cohorte, para 9 niveles). Forma de cálculo del Modelo genérico de evaluación de carreras: TD = 100 × NE(Ai+δ) / NE(Ai).",
+    formula: "TD = 100 × NE(Ai+δ) / NE(Ai): estudiantes de la cohorte Ai que no continuaban en Ai+δ / estudiantes que iniciaron en la cohorte Ai; δ = mitad de la duración",
+    unidad: "%", sentido: "menor", frecuencia: "Por cohorte", fuente: "SGA - Matrícula",
     responsable: "Dirección de Innovación", meta: null, lineaBase: null, tolerancia: 2, umbral: 1
   },
   tray_grad: {
     vista: "estudiantes", sub: "tray", dimension: "Estudiantes", nombre: "Tasa de graduación oportuna",
-    definicion: "Porcentaje de una cohorte de ingreso que se titula dentro de la duración de la carrera (9 niveles) más dos semestres. Solo se mide en cohortes cuya ventana ya cerró.",
-    formula: "(Titulados de la cohorte dentro de la duración + 2 semestres / estudiantes que ingresaron en la cohorte) × 100",
+    definicion: "Porcentaje de una cohorte que se titula en el plazo de duración de la carrera (9 niveles) más un año adicional. Es la tasa de titulación del Modelo genérico de evaluación de carreras: TT = 100 × NET / TE. Solo se mide en cohortes cuya ventana ya cerró.",
+    formula: "TT = 100 × NET / TE: titulados de la cohorte en el plazo de duración + un año / estudiantes matriculados en primer nivel en la cohorte",
     unidad: "%", sentido: "mayor", frecuencia: "Por cohorte", fuente: "SGA - Matrícula y titulación",
     responsable: "Dirección de Innovación", meta: null, lineaBase: null, tolerancia: 5, umbral: 1
   },

@@ -156,7 +156,7 @@
   const claveGrad = car => car + (dimGrad() ? '|' + dimGrad() : '');
   /* Trayectoria: los indicadores por cohorte no se cruzan con tipo de ingreso ni cohorte; titulados, no con tipo de ingreso. */
   const TRAY_IND = new Set(T ? ['tray_mat', 'tray_var', 'tray_ret', 'tray_des', 'tray_ret1', 'tray_grad', 'tray_gradt', 'tray_tit'] : []);
-  const TRAY_COH = new Set(['tray_ret1', 'tray_grad', 'tray_gradt']);
+  const TRAY_COH = new Set(['tray_ret1', 'tray_grad', 'tray_gradt', 'tray_des']);   // indicadores por cohorte de ingreso
   const enTray = () => st.vista === 'estudiantes' && st.sub === 'tray';
   const dimTray = () => st.gse || (enTray() ? st.tf : null);
   const trayAdmite = (id, d) => !d || !((TRAY_COH.has(id) || id === 'tray_tit') && /^tipo_ingreso:/.test(d)) && !(TRAY_COH.has(id) && /^cohorte:/.test(d));
@@ -681,7 +681,11 @@
       D.ind.tray_mat[k] = ys.map(y => pt(y, { v: an[y][0], n: an[y][0] }));
       D.ind.tray_var[k] = ys.filter(y => an[y][8] != null).map(y => pt(y, { v: an[y][8] }));
       D.ind.tray_ret[k] = ys.filter(y => an[y][4]).map(y => pt(y, { v: pct1(an[y][5], an[y][4]), n: an[y][4], num: an[y][5] }));
-      D.ind.tray_des[k] = ys.filter(y => an[y][6]).map(y => pt(y, { v: pct1(an[y][7], an[y][6]), n: an[y][6], num: an[y][7] }));
+    });
+    // Deserción a mitad de la carrera, por cohorte (Modelo genérico de evaluación): TD_δ = 100 × NE_{Ai+δ} / NE_{Ai}
+    Object.entries(T.des || {}).forEach(([k, co]) => {
+      D.ind.tray_des[k] = Object.keys(co).sort((a, b) => ordenP(a) - ordenP(b))
+        .map(c => ({ p: c, a: +c.slice(-4), l: lblCoh(c), v: pct1(co[c][1], co[c][0]), n: co[c][0], num: co[c][1] }));
     });
     Object.entries(T.coh).forEach(([k, co]) => {
       const cs = Object.keys(co).sort((a, b) => ordenP(a) - ordenP(b));
@@ -1152,8 +1156,8 @@
       if (rp) { const t = tendencia('tray_ret', rr, rp); s += t.dir ? `, ${t.dir > 0 ? 'sube' : 'baja'} ${B(num(Math.abs(t.d), 1) + ' pp')} frente a ${rp.a}` : `, estable frente a ${rp.a}`; }
       out.push(s + '.');
     }
-    if (d.cur) out.push(`La deserción de ${d.cur.a} es ${B(fmt('tray_des', d.cur.v))}: ${num(d.cur.num)} de ${num(d.cur.n)} estudiantes no volvieron a matricularse en los dos periodos siguientes.` +
-      (d.cur.a < anioCorte() ? ` La de ${anioCorte()} aún no se puede medir.` : ''));
+    if (d.cur) out.push(`De la cohorte ${esc(d.cur.p.replace('-', ' '))}, ${B(fmt('tray_des', d.cur.v))} ya no continuaba sus estudios a mitad de la carrera: ` +
+      `${num(d.cur.num)} de ${num(d.cur.n)} estudiantes que iniciaron el primer nivel (deserción a mitad de carrera).`);
     const g = medir('tray_grad', c).cur, gt = medir('tray_gradt', c).cur;
     if (g) out.push(`De la cohorte ${esc(g.p.replace('-', ' '))}, ${B(fmt('tray_grad', g.v))} se tituló a tiempo` + (gt ? ` y ${B(fmt('tray_gradt', gt.v))} se ha titulado hasta hoy.` : '.'));
     const m = medir('tray_mat', c), mc = m.pts.filter(p => !p.parcial), m1 = mc[mc.length - 1], m0 = mc[mc.length - 2];
@@ -1193,8 +1197,10 @@
     // Tabla por cohorte
     const kc = dim && trayAdmite('tray_grad', dim) ? k : c, co = T.coh[kc] || {};
     const cs = Object.keys(co).filter(x => +x.slice(-4) <= anioCorte()).sort((a, b) => ordenP(a) - ordenP(b));
-    const tCoh = cs.length ? `<div class="tbl-wrap" style="max-height:380px;overflow-y:auto"><table class="res"><thead><tr><th>Cohorte</th><th class="n">Ingresaron</th><th class="n">Retención 1.er año</th><th class="n">Titulados</th><th class="n">Graduación oportuna</th><th class="n">Graduación total</th><th>Ventana</th></tr></thead><tbody>` +
-      cs.map(x => { const f = co[x]; return `<tr><td>${esc(x.replace('-', ' '))}</td><td class="n">${num(f[0])}</td><td class="n">${f[1] ? num(pct1(f[2], f[1]), 1) + ' %' : '—'}</td><td class="n">${num(f[3])}</td>` +
+    const tCoh = cs.length ? `<div class="tbl-wrap" style="max-height:380px;overflow-y:auto"><table class="res"><thead><tr><th>Cohorte</th><th class="n">Ingresaron</th><th class="n">Retención 1.er año</th><th class="n">Deserción a mitad</th><th class="n">Titulados</th><th class="n">Graduación oportuna</th><th class="n">Graduación total</th><th>Ventana</th></tr></thead><tbody>` +
+      cs.map(x => { const f = co[x], de = ((T.des || {})[kc] || {})[x];
+        return `<tr><td>${esc(x.replace('-', ' '))}</td><td class="n">${num(f[0])}</td><td class="n">${f[1] ? num(pct1(f[2], f[1]), 1) + ' %' : '—'}</td>` +
+        `<td class="n">${de ? num(pct1(de[1], de[0]), 1) + ' %' : '—'}</td><td class="n">${num(f[3])}</td>` +
         `<td class="n">${f[5] ? '<b>' + num(pct1(f[4], f[0]), 1) + ' %</b>' : '—'}</td><td class="n">${f[5] ? num(pct1(f[3], f[0]), 1) + ' %' : '—'}</td>` +
         `<td>${f[5] ? '<span class="pill fin">Cerrada</span>' : '<span class="pill ej">En curso</span>'}</td></tr>`; }).join('') + '</tbody></table></div>'
       : '<div class="empty"><b>Sin cohortes para este grupo</b></div>';
@@ -1206,7 +1212,7 @@
         'Nuevo ingreso, continuidad y reingreso, sobre las matrículas de los periodos del año') +
       `</div><div class="grid2">` +
       panel('Retención estudiantil', 'tray_ret', slot(el => lineChart(el, 'tray_ret', { h: 215 })), 'Por año. Punto hueco: año en curso') +
-      panel('Deserción estudiantil', 'tray_des', slot(el => lineChart(el, 'tray_des', { h: 215 })), 'Por año. Necesita dos periodos posteriores: el año en curso no se mide') +
+      panel('Deserción a mitad de la carrera', 'tray_des', slot(el => lineChart(el, 'tray_des', { h: 215 })), 'Por cohorte de ingreso: no continuaban sus estudios en el 5.º semestre de la cohorte') +
       `</div><div class="grid2">` +
       panel('Graduación oportuna por cohorte', 'tray_grad', slot(el => lineChart(el, 'tray_grad', { h: 215 })), 'Cohortes de ingreso con la ventana de graduación cerrada') +
       panel('Retención de primer año por cohorte', 'tray_ret1', slot(el => lineChart(el, 'tray_ret1', { h: 215 })), 'Porcentaje de la cohorte que sigue al año de ingresar') +
