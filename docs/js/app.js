@@ -1508,10 +1508,15 @@
       det = d ? `<p class="ph-note">${esc(lblDe(d.k))}${d.prevK ? ' - la flecha compara con ' + esc(lblDe(d.prevK)) : ''}. La línea vertical marca el resultado global.</p>` +
         hbars(d.rows, { max: 100, prev: d.prev && mapa(d.prev), ref: cur && cur.v, tip: r => `${r.a}\n${num(r.v, 1)} % de valoraciones de 4 o 5 - promedio ${num(r.media, 2)} de 5\n${num(r.n)} respuestas` }) : '<div class="empty"><b>Sin detalle por aspecto hasta ' + st.anio + '</b>La primera medición por aspecto es de agosto – diciembre 2025.</div>';
     } else if (grupoDet === 'grad') {
+      // Solo las preguntas que hizo la encuesta del año elegido (en 2026 no se
+      // preguntó por la malla, los docentes ni los recursos: no se muestran).
       const d = ultimoDet(D.det.sat_grad[c]);
+      const grupo = (g, titulo) => {
+        const rows = d.rows.filter(r => r.g === g);
+        return rows.length ? `<div class="hsub">${titulo}</div>` + hbars(rows, { max: 100, tip: r => `${r.a}\n${num(r.v, 1)} % satisfechos - promedio ${num(r.media, 2)} de 7` }) : '';
+      };
       det = d ? `<p class="ph-note">Graduados consultados en ${esc(d.k)} - ${num(d.rows[0].n)} respuestas${d.rows[0].n < 10 ? ' (base pequeña)' : ''}. Escala de 1 a 7: se cuenta como satisfecho de 5 a 7.</p>` +
-        '<div class="hsub">La formación</div>' + hbars(d.rows.filter(r => r.g === 'formacion'), { max: 100, tip: r => `${r.a}\n${num(r.v, 1)} % satisfechos - promedio ${num(r.media, 2)} de 7` }) +
-        '<div class="hsub">El personal y los recursos de la universidad</div>' + hbars(d.rows.filter(r => r.g === 'recursos'), { max: 100, tip: r => `${r.a}\n${num(r.v, 1)} % satisfechos - promedio ${num(r.media, 2)} de 7` }) : '<div class="empty"><b>Sin encuestas a graduados hasta ' + st.anio + '</b></div>';
+        grupo('formacion', 'La formación') + grupo('recursos', 'El personal y los recursos de la universidad') : '<div class="empty"><b>Sin encuestas a graduados hasta ' + st.anio + '</b></div>';
     } else {
       const d = ultimoDet(D.det.sat_doc[c]), cur = medir('sat_doc', c).cur;
       det = d ? `<p class="ph-note">${esc(lblDe(d.k))} - ${num(cur.n)} docentes. La línea vertical marca el resultado global.</p>` +

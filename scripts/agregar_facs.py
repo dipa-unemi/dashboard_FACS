@@ -257,6 +257,8 @@ A1_ESCALA = {
     "¿En términos generales cuál fue el desempeño profesional de los docentes?": "Desempeño profesional de los docentes",
     "¿La malla curricular de su carrera durante su formación académica estuvo acorde a sus expectativas?": "Malla curricular acorde a sus expectativas",
     "¿Se siente orgulloso ser profesional de UNEMI?": "Orgullo de ser profesional UNEMI",
+    # Formulario 2026: la misma pregunta con otra redacción (pregunta_id 866).
+    "¿Se siente orgulloso/a de ser profesional de UNEMI?": "Orgullo de ser profesional UNEMI",
 }
 assert set(A1_ESCALA) <= set(grad.pregunta), "cambió el texto de una pregunta de satisfacción de graduados"
 g_esc = grad[grad.pregunta.isin(A1_ESCALA) | grad.grupo_competencia.str.startswith("A.2 Satisfacción")]
