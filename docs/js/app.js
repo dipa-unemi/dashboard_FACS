@@ -102,7 +102,7 @@
     grad_empleab: ICO.maletin, grad_ins6: ICO.reloj, grad_afin: ICO.diana, grad_cob: ICO.grafico, grad_resp: ICO.mensaje,
     grad_fijo: ICO.documento, grad_sbu: ICO.dolar, grad_sup: ICO.escalera, grad_terc: ICO.tienda, grad_sinact: ICO.pausa,
     grad_compe: ICO.bombilla, grad_compg: ICO.libro, grad_conv: ICO.mano, grad_bolsa: ICO.lupa, grad_maest: ICO.birrete, grad_malla: ICO.cuadricula,
-    doc_n: ICO.personas, doc_tc: ICO.reloj, doc_cuarto: ICO.libro, doc_phd: ICO.birrete, doc_maest: ICO.diploma,
+    doc_n: ICO.personas, doc_tc: ICO.reloj, doc_cuarto: ICO.libro, doc_phd: ICO.birrete, doc_maest: ICO.diploma, doc_sinmae: ICO.libro,
     doc_eval: ICO.estrella, doc_cap: ICO.bombilla, sat_doc: ICO.sonrisa, sat_est: ICO.sonrisa, sat_grad: ICO.diploma,
     // vistas 2, 4, 5 y 6
     pub_total: ICO.documento, doc_prod: ICO.lapiz, pub_alto: ICO.globo, pub_q12: ICO.estrella, pub_est: ICO.birrete, pub_proy: ICO.bombilla,
@@ -281,6 +281,7 @@
       case 'doc_n': return p.parcial ? 'Año en curso: solo 1S 2026' : '';
       case 'doc_eval': return `Sobre ${num(n)} docentes evaluados` + (p.a >= 2025 ? ' - nueva escala desde 2025' : '');
       case 'doc_carga': return 'Promedio por periodo';
+      case 'doc_sinmae': return `${num(k)} de ${num(n)} docentes` + (p.resto.length ? ': ' + p.resto.map(([t, x]) => `${num(x)} ${NIV_CORTO[t] || t.toLowerCase()}`).join(', ') : '');
       case 'doc_phd': case 'doc_maest': case 'doc_cuarto': case 'doc_evalcob': case 'doc_cap': case 'doc_tc':
         return `Sobre ${num(n)} docentes` + (p.parcial ? ' - año en curso' : '');
       case 'grad_resp': return `${num(p.u)} graduados únicos`;
@@ -750,6 +751,14 @@
   perfSeries();
   /* Docentes: las series vienen listas por año y carrera (claves FACS, ENF, NUT). */
   if (DOC) Object.assign(D.ind, DOC.ind);
+  /* Sin maestría ni PhD: el resto del nivel académico publicado (especialidad, diplomado, tercer nivel o sin
+     registro), para que PhD + maestría + este indicador sumen 100 %. No agrega cifras: sale de DOC.det. */
+  const NIV_CORTO = { 'Especialidad': 'especialidad', 'Diplomado u otro posgrado sin grado': 'diplomado', 'Tercer nivel': 'tercer nivel', 'Sin registro': 'sin registro' };
+  if (DOC) D.ind.doc_sinmae = Object.fromEntries(Object.entries(DOC.det).map(([car, an]) => [car, Object.keys(an).sort().map(a => {
+    const niv = an[a].nivel, n = niv.reduce((s, [, x]) => s + x, 0), resto = niv.filter(([t]) => t !== 'PhD' && t !== 'Maestría');
+    const k = resto.reduce((s, [, x]) => s + x, 0);
+    return { p: a, l: a, a: +a, v: pct1(k, n), n, num: k, parcial: +a === DOC.anioParcial, resto };
+  })]));
   const pcValido = (d, v) => !!P && d !== 'gse' && d !== 'disct' && P.valores[d] && P.valores[d].includes(v);
   const TF_TIPOS = { sexo: 'Sexo', tipo_ingreso: 'Tipo de ingreso', cohorte: 'Cohorte de ingreso' };
   const tfValido = tf => !!T && !!tf && /^(sexo|tipo_ingreso|cohorte):/.test(tf) && Object.keys(T.anual).some(k => k.endsWith('|' + tf));
@@ -1401,9 +1410,10 @@
   function insDoc() {
     const out = [], c = st.car;
     if (!DOC) return out;
-    const n = medir('doc_n', c).cur, phd = medir('doc_phd', c).cur, pg = medir('doc_cuarto', c).cur;
+    const n = medir('doc_n', c).cur, phd = medir('doc_phd', c).cur, mae = medir('doc_maest', c).cur, sm = medir('doc_sinmae', c).cur;
     if (n && phd) out.push(`La carrera contó con ${B(num(n.v) + ' docentes')} en ${n.a}${n.parcial ? ' (solo 1S 2026)' : ''}; ${B(fmt('doc_phd', phd.v))} tiene doctorado` +
-      (pg ? ` y ${B(fmt('doc_cuarto', pg.v))} tiene algún posgrado (PhD, maestría o especialidad).` : '.'));
+      (mae ? `, ${B(fmt('doc_maest', mae.v))} tiene la maestría como título más alto` : '') +
+      (sm ? ` y ${B(fmt('doc_sinmae', pct1(sm.n - sm.num, sm.n)))} tiene al menos maestría.` : '.'));
     const e = medir('doc_eval', c);
     if (e.cur) out.push(`${B(fmt('doc_eval', e.cur.v))} de los docentes evaluados obtiene 4,0 o más de 5` +
       (e.cur.a >= 2025 ? '; desde 2025 la escala de la evaluación cambió y los resultados no son comparables con años anteriores.' : '.'));
@@ -1414,7 +1424,7 @@
   function vDocentes() {
     if (!DOC) return '<div class="empty"><b>Faltan los datos de docentes</b>No se cargó data/docentes-data.js.</div>';
     const c = st.car, dd = docDet(c), d = dd && dd.d, y = dd && dd.y;
-    const ids = ['doc_n', 'doc_tc', 'doc_cuarto', 'doc_phd', 'doc_maest', 'doc_eval', 'doc_cap', 'sat_doc'];
+    const ids = ['doc_n', 'doc_phd', 'doc_maest', 'doc_sinmae', 'doc_tc', 'doc_eval', 'doc_cap', 'sat_doc'];
     const notaY = y ? `${y}${+y === DOC.anioParcial ? ' (año en curso: 1S 2026)' : ''}` : '';
     const barras = (filas, o) => {
       o = o || {};
@@ -1468,7 +1478,7 @@
       panel('Autoidentificación étnica', 'doc_n', barras(d && d.etnia, { color: '#335f7f' }), notaY + ` - categorías con menos de ${DOC.kAnon} docentes agrupadas`) +
       panel('Discapacidad', 'doc_n', barras(d && d.disc, { color: '#335f7f', detalle: r => r.a === 'Con discapacidad' && d.disc_tipo && d.disc_tipo.length
         ? '\nPor tipo:\n' + d.disc_tipo.map(([t, n]) => `· ${t}: ${num(n)}`).join('\n') : '' }), notaY + ' - pasa el mouse sobre «Con discapacidad» para ver los tipos') +
-      `</div>` + tabla(['doc_n', 'doc_tc', 'doc_cuarto', 'doc_phd', 'doc_maest', 'doc_evalcob', 'doc_eval', 'doc_cap', 'doc_carga']);
+      `</div>` + tabla(['doc_n', 'doc_phd', 'doc_maest', 'doc_sinmae', 'doc_cuarto', 'doc_tc', 'doc_evalcob', 'doc_eval', 'doc_cap', 'doc_carga']);
   }
 
   /* ---------------- Vista 2 - Grupos de interés ---------------- */

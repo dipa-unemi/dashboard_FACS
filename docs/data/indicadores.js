@@ -316,9 +316,16 @@ window.FACS_INDICADORES = {
     responsable: "Dirección de Evaluación y Perfeccionamiento Académico", meta: null, lineaBase: null, tolerancia: 2, umbral: 1
   },
   doc_maest: {
-    vista: "docentes", dimension: "Docentes", nombre: "Docentes con maestría",
-    definicion: "Porcentaje de docentes cuyo título más alto es una maestría (los doctores se cuentan aparte).",
+    vista: "docentes", dimension: "Docentes", nombre: "Docentes con maestría (sin PhD)",
+    definicion: "Porcentaje de docentes cuyo título más alto es una maestría. Los doctores también tienen maestría, pero se cuentan en «Docentes con grado doctoral»: sumados, dan los docentes con al menos maestría.",
     formula: "(Docentes con maestría como título más alto / total de docentes) × 100",
+    unidad: "%", sentido: "info", frecuencia: "Anual", fuente: "SGA - Títulos (desempeno_doc)",
+    responsable: "Dirección de Evaluación y Perfeccionamiento Académico", meta: null, lineaBase: null, tolerancia: 5, umbral: 1
+  },
+  doc_sinmae: {
+    vista: "docentes", dimension: "Docentes", nombre: "Docentes sin maestría ni PhD",
+    definicion: "Porcentaje de docentes cuyo título más alto no es maestría ni doctorado: tercer nivel, especialidad, diplomado o sin título registrado en el SGA. Con PhD y maestría suma 100 %. Incluye a los técnicos docentes que no tienen maestría.",
+    formula: "(Docentes sin maestría ni PhD como título más alto / total de docentes) × 100",
     unidad: "%", sentido: "info", frecuencia: "Anual", fuente: "SGA - Títulos (desempeno_doc)",
     responsable: "Dirección de Evaluación y Perfeccionamiento Académico", meta: null, lineaBase: null, tolerancia: 5, umbral: 1
   },
