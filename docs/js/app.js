@@ -99,7 +99,7 @@
     perf_n: ICO.personas, perf_muj: ICO.mujer, perf_edad: ICO.pastel, perf_gse: ICO.casa, perf_etn: ICO.globo, perf_disc: ICO.accesible, perf_fuera: ICO.pin,
     rend_est: ICO.personas, rend_aprob: ICO.check, rend_reprob: ICO.cruz, rend_nota: ICO.lapiz, rend_exc: ICO.estrella,
     rend_asist: ICO.calendario, rend_rep: ICO.repetir, rend_aband: ICO.salida,
-    grad_empleab: ICO.maletin, grad_ins6: ICO.reloj, grad_afin: ICO.diana, grad_cob: ICO.grafico, grad_resp: ICO.mensaje,
+    grad_empleab: ICO.maletin, grad_trabm: ICO.diploma, grad_ins6: ICO.reloj, grad_afin: ICO.diana, grad_cob: ICO.grafico, grad_resp: ICO.mensaje,
     grad_fijo: ICO.documento, grad_sbu: ICO.dolar, grad_sup: ICO.escalera, grad_terc: ICO.tienda, grad_sinact: ICO.pausa,
     grad_compe: ICO.bombilla, grad_compg: ICO.libro, grad_conv: ICO.mano, grad_bolsa: ICO.lupa, grad_maest: ICO.birrete, grad_malla: ICO.cuadricula,
     doc_n: ICO.personas, doc_tc: ICO.reloj, doc_cuarto: ICO.libro, doc_phd: ICO.birrete, doc_maest: ICO.diploma, doc_sinmae: ICO.libro,
@@ -150,7 +150,8 @@
   const GRAD_CAMPO = { grad_empleab: 'empleabilidad', grad_ins6: 'insercion_6m', grad_afin: 'empleo_afin', grad_fijo: 'contrato_fijo',
     grad_sbu: 'salario_sobre_sbu', grad_sup: 'supervision_direccion', grad_terc: 'sector_terciario', grad_sinact: 'sin_actividad',
     grad_compe: 'competencias_especificas', grad_compg: 'competencias_generales', grad_conv: 'empleador_convenio',
-    grad_bolsa: 'empleo_bolsa_unemi', grad_maest: 'quiere_maestria', grad_malla: 'malla_acorde' };
+    grad_bolsa: 'empleo_bolsa_unemi', grad_maest: 'quiere_maestria', grad_malla: 'malla_acorde',
+    grad_trabm: 'trabaja_o_maestria' };
   const GRAD_IND = new Set(G ? Object.keys(GRAD_CAMPO).concat('grad_resp', 'grad_cob') : []);
   const dimGrad = () => st.gse || (enGrad() ? st.gf : null);
   const claveGrad = car => car + (dimGrad() ? '|' + dimGrad() : '');
@@ -1026,7 +1027,7 @@
   /* ---------------- Vista 1 - Seguimiento a graduados ---------------- */
   const GV = { tray: 'Trayectoria', empleo: 'Condiciones del empleo', form: 'Formación y vinculación' };
   const GV_IDS = {
-    tray: ['grad_empleab', 'grad_ins6', 'grad_afin', 'grad_cob', 'grad_resp'],
+    tray: ['grad_empleab', 'grad_trabm', 'grad_ins6', 'grad_afin', 'grad_cob', 'grad_resp'],
     empleo: ['grad_fijo', 'grad_sbu', 'grad_sup', 'grad_terc', 'grad_sinact'],
     form: ['grad_compe', 'grad_compg', 'grad_conv', 'grad_bolsa', 'grad_maest']
   };
@@ -1071,6 +1072,8 @@
       if (e.prev) { const t = tendencia('grad_empleab', e.cur, e.prev); s += t.dir ? ` (${t.dir > 0 ? 'sube' : 'baja'} ${num(Math.abs(t.d), 1)} pp frente a ${esc(e.prev.l.toLowerCase())})` : ''; }
       out.push(s + (e.cur.n < 10 ? `; son solo ${num(e.cur.n)} respuestas, conviene leerlo con cautela.` : '.'));
     }
+    const tm = medir('grad_trabm', c).cur;
+    if (tm) out.push(`${B(fmt('grad_trabm', tm.v))} trabaja o cursa una maestría (${num(tm.num)} de ${num(tm.n)} en la ${esc(tm.l.toLowerCase())}; solo se pregunta al año y a los dos años).`);
     const i6 = medir('grad_ins6', c).cur;
     if (i6) out.push(`${B(fmt('grad_ins6', i6.v))} consiguió su primer empleo relacionado con la carrera en 6 meses o menos.`);
     const af = medir('grad_afin', c).cur;

@@ -193,6 +193,13 @@ window.FACS_INDICADORES = {
     unidad: "%", sentido: "mayor", frecuencia: "Anual", fuente: "Encuestas de seguimiento a graduados (SGA)",
     responsable: "Seguimiento a graduados", meta: null, lineaBase: null, tolerancia: 5, umbral: 1
   },
+  grad_trabm: {
+    vista: "estudiantes", sub: "grad", gv: "tray", dimension: "Estudiantes", nombre: "Trabaja o cursa maestría",
+    definicion: "Proporción de graduados que tiene alguna actividad laboral o que, sin tenerla, cursa o cursó una maestría desde su graduación. Solo se mide en las encuestas que preguntan por la formación posterior (desde 2026, al año y a los dos años de titularse).",
+    formula: "(Graduados con actividad laboral + graduados sin actividad laboral con maestría / graduados que responden) × 100",
+    unidad: "%", sentido: "mayor", frecuencia: "Anual", fuente: "Encuestas de seguimiento a graduados (SGA)",
+    responsable: "Seguimiento a graduados", meta: null, lineaBase: null, tolerancia: 5, umbral: 1
+  },
   grad_ins6: {
     vista: "estudiantes", sub: "grad", gv: "tray", dimension: "Estudiantes", nombre: "Inserción en 6 meses o menos",
     definicion: "Porcentaje de graduados que encontraron su primer empleo relacionado con lo estudiado en 6 meses o menos.",
